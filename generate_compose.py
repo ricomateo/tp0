@@ -5,6 +5,12 @@ def generate_compose(output_file, clients):
     with open(output_file) as f:
         compose = yaml.safe_load(f)
     
+    compose["services"]["server"]["volumes"] = [{
+        "type": "bind",
+        "source": "./server/config.ini",
+        "target": "/config.ini"
+    }]
+
     for i in range(1, clients + 1):
         compose["services"][f"client{i}"] = {
             "container_name": f"client{i}",
