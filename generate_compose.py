@@ -13,6 +13,11 @@ def generate_compose(output_file, clients):
             "environment": ["CLI_ID=1", "CLI_LOG_LEVEL=DEBUG"],
             "networks": ["testing_net"],
             "depends_on": ["server"],
+            "volumes": [{
+                "type": "bind",
+                "source": "./client/config.yaml",
+                "target": "/config.yaml"
+            }]
         }
 
     # Save the new compose file
