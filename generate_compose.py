@@ -10,6 +10,8 @@ def generate_compose(output_file, clients):
         "source": "./server/config.ini",
         "target": "/config.ini"
     }]
+    # Empty up the server environment
+    compose["services"]["server"]["environment"] = {}
 
     for i in range(1, clients + 1):
         compose["services"][f"client{i}"] = {
