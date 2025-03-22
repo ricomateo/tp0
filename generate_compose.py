@@ -1,8 +1,8 @@
 import sys
 import yaml
 
-def generate_compose(output_file, clients):
-    with open(output_file) as f:
+def generate_compose(base_file, output_file, clients):
+    with open(base_file) as f:
         compose = yaml.safe_load(f)
     
     compose["services"]["server"]["volumes"] = [{
@@ -11,14 +11,14 @@ def generate_compose(output_file, clients):
         "target": "/config.ini"
     }]
     # Empty up the server environment
-    compose["services"]["server"]["environment"] = {}
+    del compose["services"]["server"]["environment"]
 
     for i in range(1, clients + 1):
         compose["services"][f"client{i}"] = {
             "container_name": f"client{i}",
             "image": "client:latest",
             "entrypoint": "/client",
-            "environment": ["CLI_ID=1", "CLI_LOG_LEVEL=DEBUG"],
+            "environment": ["CLI_ID=1"],
             "networks": ["testing_net"],
             "depends_on": ["server"],
             "volumes": [{
@@ -37,10 +37,11 @@ def generate_compose(output_file, clients):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) >= 3:
-        output_file = sys.argv[1]
-        clients = sys.argv[2]
-        generate_compose(output_file, int(clients))
+    if len(sys.argv) >= 4:
+        base_file = sys.argv[1]
+        output_file = sys.argv[2]
+        clients = sys.argv[3]
+        generate_compose(base_file, output_file, int(clients))
     else:
         print(f"Missing arguments")
 
