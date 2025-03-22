@@ -12,6 +12,17 @@ def generate_compose(base_file, output_file, clients):
     }]
     # Empty up the server environment
     del compose["services"]["server"]["environment"]
+    
+    # Collect the clients to delete
+    clients_to_delete = []
+    for service in compose["services"].keys():
+        if service.startswith("client"):
+            clients_to_delete.append(service)
+    
+    # Delete the clients
+    for client in clients_to_delete:
+        del compose["services"][client]
+
 
     for i in range(1, clients + 1):
         compose["services"][f"client{i}"] = {
