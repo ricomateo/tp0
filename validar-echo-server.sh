@@ -6,9 +6,14 @@ HOST=server
 PORT=12345
 NETWORK=tp0_testing_net
 
-OUTPUT=$(docker run -q -it --rm --network=$NETWORK --name=netcat nc -c "echo $MESSAGE | nc $HOST $PORT" | tr -d '\r')
+# Start the container, send "hello" to the server, and save the response in 'output.txt'
+docker run -q -it --rm --network=$NETWORK --name=netcat nc -c "echo $MESSAGE | nc $HOST $PORT" > output.txt 2> error.txt
 
-if [[ "$OUTPUT" == "$MESSAGE" ]]; then
+RESPONSE=$(cat output.txt | tr -d '\r')
+rm output.txt
+rm error.txt
+
+if [[ "$RESPONSE" == "$MESSAGE" ]]; then
     echo "action: test_echo_server | result: success"
 else
     echo "action: test_echo_server | result: fail"
