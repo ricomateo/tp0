@@ -8,13 +8,13 @@ NETWORK=tp0_testing_net
 NAME=netcat
 
 # Start the container, send "hello" to the server
-docker run -d --network=$NETWORK --name=$NAME nc -c "echo $MESSAGE | nc $HOST $PORT"
+RUN_OUTPUT=$(docker run -d --network=$NETWORK --name=$NAME nc -c "echo $MESSAGE | nc $HOST $PORT")
 
 # Get the server response through 'docker logs'
 RESPONSE=$(docker logs $NAME)
 
 # Remove the container
-docker rm $NAME
+CLEANUP_OUTPUT=$(docker stop $NAME && docker rm $NAME)
 
 # Check the response
 if [[ "$RESPONSE" == "$MESSAGE" ]]; then
