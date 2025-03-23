@@ -6,6 +6,7 @@ from common.utils import Bet
 
 SOCKET_TIMEOUT = 5
 BET_INFO_MSG_TYPE = 0
+BET_CONFIRMATION_MSG_TYPE = 1
 
 class CommunicationHandler:
     def __init__(self, port, listen_backlog):
@@ -60,6 +61,23 @@ class CommunicationHandler:
             # self._client_sock.send("{}\n".format(msg).encode('utf-8'))
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
+
+    def send_bet_confirmation(self, bet: Bet):
+        message_type = BET_CONFIRMATION_MSG_TYPE
+        document = str(bet.document).encode('utf-8')
+        number = str(bet.number).encode('utf-8')
+        
+        # Send message type
+        self._client_sock.send(message_type.to_bytes(1, "big"))
+        # Send document's length and value
+        self._client_sock.send(len(document).to_bytes(1, "big"))
+        self._client_sock.send(document)
+        
+        # Send number's length and value
+        self._client_sock.send(len(number).to_bytes(1, "big"))
+        self._client_sock.send(number)
+        self._client_sock.send(b"\n")
+
 
     def __decode_bet_info(self):
         # TODO: add error handling

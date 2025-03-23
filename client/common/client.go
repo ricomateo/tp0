@@ -1,7 +1,7 @@
 package common
 
 import (
-	"bufio"
+	"io"
 	"net"
 	"os"
 	"os/signal"
@@ -104,26 +104,47 @@ func (c *Client) StartClientLoop() {
 			log.Info("Expected to write %v bytes, wrote %v bytes", len(betMsg), n)
 		}
 
-		msg, err := bufio.NewReader(c.conn).ReadString('\n')
+		log.Info("Deserializing msgType")
+		msgType := uint8(c.recv(1)[0])
+		log.Info("Deserialized msgType: %v", msgType)
+
+		if msgType == 1 {
+			// Decode document
+			documentLen := uint32(c.recv(1)[0])
+			document := string(c.recv(documentLen)[:])
+			// Decode number
+			numberLen := uint32(c.recv(1)[0])
+			number := string(c.recv(numberLen)[:])
+			log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v", document, number)
+		}
 		c.conn.Close()
 
-		if err != nil {
-			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
-				c.config.ID,
-				err,
-			)
-			return
-		}
+		// if err != nil {
+		// 	log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
+		// 		c.config.ID,
+		// 		err,
+		// 	)
+		// 	return
+		// }
 
-		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
-			c.config.ID,
-			msg,
-		)
+		// log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
+		// 	c.config.ID,
+		// 	msg,
+		// )
 
 		// Wait a time between sending one message and the next one
 		time.Sleep(c.config.LoopPeriod)
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
+}
+
+func (c *Client) recv(size uint32) []byte {
+	bytes := make([]byte, size)
+	_, err := io.ReadFull(c.conn, bytes)
+	if err != nil {
+		log.Errorf("Failed to read connection bytes. Error: %v", err)
+	}
+	return bytes
 }
 
 func (c *Client) exitGracefully() {

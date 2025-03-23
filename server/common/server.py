@@ -22,8 +22,9 @@ class Server:
             self.__communication_handler.accept_new_connection()
             bet = self.__communication_handler.recv_msg()
             # TODO: handle possible storage error
-            store_bets([bet])
-            logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
             # TODO: process the message
             logging.info(f"Received msg: {bet}")
+            store_bets([bet])
+            logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
+            self.__communication_handler.send_bet_confirmation(bet)
             self.__communication_handler.close_current_connection()
