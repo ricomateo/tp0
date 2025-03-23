@@ -68,6 +68,8 @@ class Server:
     def __exit_gracefully(self):
         logging.info("Received SIGTERM signal, exiting gracefully")
         self._server_socket.shutdown(socket.SHUT_RDWR)
+        logging.info("Shutting down server")
         if self._client_sock is not None:
+            logging.info("Closing socket connection")
             self._client_sock.close()
         sys.exit(0)
