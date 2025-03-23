@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -26,6 +27,7 @@ type ClientConfig struct {
 type Client struct {
 	config          ClientConfig
 	conn            net.Conn
+	mutex           sync.Mutex // Mutex to synchronize the receivedSigTerm flag read/write
 	receivedSigTerm bool
 }
 
@@ -64,7 +66,9 @@ func (c *Client) StartClientLoop() {
 		sig := <-signalChannel
 		if sig == syscall.SIGTERM {
 			log.Info("Received SIGTERM signal")
+			c.mutex.Lock()
 			c.receivedSigTerm = true
+			c.mutex.Unlock()
 		}
 	}()
 	// There is an autoincremental msgID to identify every message sent
@@ -73,8 +77,13 @@ func (c *Client) StartClientLoop() {
 		// Create the connection the server in every loop iteration. Send an
 		c.createClientSocket()
 
+		// Atomically read the SIGTERM flag
+		c.mutex.Lock()
+		receivedSigTerm := c.receivedSigTerm
+		c.mutex.Unlock()
+
 		// Exit in case of having received a SIGTERM signal
-		if c.receivedSigTerm {
+		if receivedSigTerm {
 			c.exitGracefully()
 		}
 
