@@ -56,9 +56,7 @@ class CommunicationHandler:
             message_type = int.from_bytes(self._client_sock.recv(1), "big")
             if message_type == BET_INFO_MSG_TYPE:
                 return self.__decode_bet_info()
-            
-            # TODO: Modify the send to avoid short-writes
-            # self._client_sock.send("{}\n".format(msg).encode('utf-8'))
+
         except OSError as e:
             logging.error("action: receive_message | result: fail | error: {e}")
 
@@ -66,20 +64,22 @@ class CommunicationHandler:
         message_type = BET_CONFIRMATION_MSG_TYPE
         document = str(bet.document).encode('utf-8')
         number = str(bet.number).encode('utf-8')
-        
+    
         # Send message type
-        self._client_sock.send(message_type.to_bytes(1, "big"))
+        self._client_sock.sendall(message_type.to_bytes(1, "big"))
         # Send document's length and value
-        self._client_sock.send(len(document).to_bytes(1, "big"))
-        self._client_sock.send(document)
+        self._client_sock.sendall(len(document).to_bytes(1, "big"))
+        self._client_sock.sendall(document)
         
         # Send number's length and value
-        self._client_sock.send(len(number).to_bytes(1, "big"))
-        self._client_sock.send(number)
-        self._client_sock.send(b"\n")
+        self._client_sock.sendall(len(number).to_bytes(1, "big"))
+        self._client_sock.sendall(number)
+        self._client_sock.sendall(b"\n")
 
+    def close_current_connection(self):
+        self._client_sock.close()
 
-    def __decode_bet_info(self):
+    def __decode_bet_info(self) -> Bet:
         # TODO: add error handling
         # Deserialize the name
         agency_len = int.from_bytes(self._client_sock.recv(1), "big")
@@ -106,11 +106,6 @@ class CommunicationHandler:
         
         logging.info(f"Message data: agency: {agency} name: {name}, last_name: {last_name}, document: {document}, birthdate: {birthdate}, number: {number}")
         return Bet(agency, name, last_name, str(document), birthdate, str(number))
-    
-
-    def close_current_connection(self):
-        self._client_sock.close()
-
     
     def __sigterm_handler(self, signum, _):
         if signum == signal.SIGTERM:
