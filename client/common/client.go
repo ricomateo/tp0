@@ -13,6 +13,7 @@ import (
 var log = logging.MustGetLogger("log")
 
 type BetInfo struct {
+	Agency      string
 	Name        string
 	LastName    string
 	Document    string

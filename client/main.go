@@ -105,6 +105,7 @@ func main() {
 
 	// TODO: handle errors
 	betInfo := common.BetInfo{
+		Agency:      os.Getenv("AGENCIA"),
 		Name:        os.Getenv("NOMBRE"),
 		LastName:    os.Getenv("APELLIDO"),
 		Document:    os.Getenv("DOCUMENTO"),

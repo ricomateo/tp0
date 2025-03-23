@@ -4,6 +4,10 @@ func (b *BetInfo) serialize() []byte {
 	messageType := byte(0)
 	serializedMsg := make([]byte, 0)
 	serializedMsg = append(serializedMsg, messageType)
+	// Serialize the agency
+	agencyLength := byte(len(b.Agency))
+	serializedMsg = append(serializedMsg, agencyLength)
+	serializedMsg = append(serializedMsg, []byte(b.Agency)...)
 
 	// Serialize the name
 	nameLength := byte(len(b.Name))

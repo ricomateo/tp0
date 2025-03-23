@@ -82,6 +82,9 @@ class CommunicationHandler:
     def __decode_bet_info(self):
         # TODO: add error handling
         # Deserialize the name
+        agency_len = int.from_bytes(self._client_sock.recv(1), "big")
+        agency = str(self._client_sock.recv(agency_len), 'utf-8')
+
         name_len = int.from_bytes(self._client_sock.recv(1), "big")
         name = str(self._client_sock.recv(name_len), 'utf-8')
 
@@ -100,11 +103,8 @@ class CommunicationHandler:
         # Deserialize the number
         number_len = int.from_bytes(self._client_sock.recv(1), "big")
         number = str(self._client_sock.recv(number_len), 'utf-8')
-
-        # TODO: include agency in the message
-        agency = "1"
         
-        logging.info(f"Message data: name: {name}, last_name: {last_name}, document: {document}, birthdate: {birthdate}, number: {number}")
+        logging.info(f"Message data: agency: {agency} name: {name}, last_name: {last_name}, document: {document}, birthdate: {birthdate}, number: {number}")
         return Bet(agency, name, last_name, str(document), birthdate, str(number))
     
 
