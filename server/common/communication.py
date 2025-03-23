@@ -47,10 +47,7 @@ class CommunicationHandler:
 
     def recv_msg(self):
         """
-        Read message from a specific client socket and closes the socket
-
-        If a problem arises in the communication with the client, the
-        client socket will also be closed
+        Reads a message from the current client socket
         """
         try:
             message_type = int.from_bytes(self._client_sock.recv(1), "big")
@@ -61,6 +58,9 @@ class CommunicationHandler:
             logging.error("action: receive_message | result: fail | error: {e}")
 
     def send_bet_confirmation(self, bet: Bet):
+        """
+        Sends a confirmation message for the given bet to the current socket connection.
+        """
         message_type = BET_CONFIRMATION_MSG_TYPE
         document = str(bet.document).encode('utf-8')
         number = str(bet.number).encode('utf-8')
@@ -80,6 +80,9 @@ class CommunicationHandler:
         self._client_sock.close()
 
     def __decode_bet_info(self) -> Bet:
+        """
+        Reads and returns a Bet message from the current socket connection.
+        """
         # TODO: add error handling
         # Deserialize the fields
         agency = self.__recv_str()
@@ -89,7 +92,7 @@ class CommunicationHandler:
         birthdate = self.__recv_str()
         number = self.__recv_str()
         
-        logging.info(f"Message data: agency: {agency} name: {name}, last_name: {last_name}, document: {document}, birthdate: {birthdate}, number: {number}")
+        logging.debug(f"Message data: agency: {agency} name: {name}, last_name: {last_name}, document: {document}, birthdate: {birthdate}, number: {number}")
         return Bet(agency, name, last_name, str(document), birthdate, str(number))
     
     def __recv_str(self) -> str:
