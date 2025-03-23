@@ -4,6 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/op/go-logging"
@@ -21,15 +24,17 @@ type ClientConfig struct {
 
 // Client Entity that encapsulates how
 type Client struct {
-	config ClientConfig
-	conn   net.Conn
+	config          ClientConfig
+	conn            net.Conn
+	receivedSigTerm bool
 }
 
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
 func NewClient(config ClientConfig) *Client {
 	client := &Client{
-		config: config,
+		config:          config,
+		receivedSigTerm: false,
 	}
 	return client
 }
@@ -52,11 +57,26 @@ func (c *Client) createClientSocket() error {
 
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop() {
+	signalChannel := make(chan os.Signal, 2)
+	// Set the SIGTERM handler
+	signal.Notify(signalChannel, syscall.SIGTERM)
+	go func() {
+		sig := <-signalChannel
+		if sig == syscall.SIGTERM {
+			log.Info("Received SIGTERM signal")
+			c.receivedSigTerm = true
+		}
+	}()
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
 		c.createClientSocket()
+
+		// Exit in case of having received a SIGTERM signal
+		if c.receivedSigTerm {
+			c.exitGracefully()
+		}
 
 		// TODO: Modify the send to avoid short-write
 		fmt.Fprintf(
@@ -83,7 +103,16 @@ func (c *Client) StartClientLoop() {
 
 		// Wait a time between sending one message and the next one
 		time.Sleep(c.config.LoopPeriod)
-
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
+}
+
+func (c *Client) exitGracefully() {
+	err := c.conn.Close()
+	if err != nil {
+		log.Error("Failed to close connection. Error: ", err)
+		os.Exit(1)
+	}
+	log.Info("Client exited gracefully")
+	os.Exit(0)
 }
