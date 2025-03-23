@@ -2,11 +2,13 @@ package communication
 
 type MessageType = uint8
 
+// The different types of messages
 const (
 	StoreBetMsg MessageType = iota
 	ConfirmedBetMsg
 )
 
+// Message struct containing the message type and its payload
 type Message struct {
 	MessageType MessageType
 	Payload     interface{}

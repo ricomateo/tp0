@@ -31,6 +31,8 @@ func (c *CommunicationHandler) Connect(address string) error {
 	return nil
 }
 
+// Send sends the given message through the current socket connection.
+// In case of failure returns an error
 func (c *CommunicationHandler) Send(msg Message) error {
 	serializedMsg := msg.serialize()
 	n, err := c.conn.Write(serializedMsg)
@@ -43,10 +45,14 @@ func (c *CommunicationHandler) Send(msg Message) error {
 	return nil
 }
 
+// Disconnect closes the current socket connection.
+// Returns an error in case of failure
 func (c *CommunicationHandler) Disconnect() error {
 	return c.conn.Close()
 }
 
+// RecvMsg blocks waiting for a message.
+// Returns an error in case of failure
 func (c *CommunicationHandler) RecvMsg() (*Message, error) {
 	msgType := c.recvByte()
 
@@ -57,6 +63,7 @@ func (c *CommunicationHandler) RecvMsg() (*Message, error) {
 	return nil, fmt.Errorf("invalid message type %d", msgType)
 }
 
+// recv returns `size` bytes read from the socket
 func (c *CommunicationHandler) recv(size uint32) []byte {
 	bytes := make([]byte, size)
 	_, err := io.ReadFull(c.conn, bytes)
@@ -66,10 +73,12 @@ func (c *CommunicationHandler) recv(size uint32) []byte {
 	return bytes
 }
 
+// recvByte returns a single byte read from the socket
 func (c *CommunicationHandler) recvByte() uint8 {
 	return uint8(c.recv(1)[0])
 }
 
+// recvConfirmedMsg reads and deserializes a message into a ConfirmedBet message.
 func (c *CommunicationHandler) recvConfirmedBetMsg() (*Message, error) {
 	// Decode document
 	documentLen := uint32(c.recvByte())

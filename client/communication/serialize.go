@@ -1,5 +1,6 @@
 package communication
 
+// serialize serializes the given message
 func (m *Message) serialize() []byte {
 	switch m.MessageType {
 	case StoreBetMsg:
@@ -9,6 +10,7 @@ func (m *Message) serialize() []byte {
 	return []byte{}
 }
 
+// serialize serializes the BetInfo payload
 func (b *BetInfo) serialize() []byte {
 	messageType := byte(0)
 	serializedMsg := make([]byte, 0)
@@ -25,6 +27,7 @@ func (b *BetInfo) serialize() []byte {
 	return serializedMsg
 }
 
+// serializeField serializes a string field and appends it to the given buffer
 func serializeField(buf []byte, field string) []byte {
 	fieldLength := byte(len(field))
 	buf = append(buf, fieldLength)
