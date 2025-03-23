@@ -102,7 +102,10 @@ func (c *Client) StartClientLoop() {
 			c.config.ID,
 			msg,
 		)
-		log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v", msg.document, msg.number)
+		if msg.messageType == ConfirmedBetMsg {
+			msg := msg.payload.(ConfirmedBet)
+			log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v", msg.document, msg.number)
+		}
 
 		c.commHandler.disconnect()
 

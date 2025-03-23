@@ -2,7 +2,7 @@ package common
 
 func (m *Message) serialize() []byte {
 	switch m.messageType {
-	case StoreBet:
+	case StoreBetMsg:
 		payload := m.payload.(BetInfo)
 		return payload.serialize()
 	}

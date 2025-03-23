@@ -3,8 +3,8 @@ package common
 type MessageType = uint8
 
 const (
-	StoreBet MessageType = iota
-	ConfirmedBet
+	StoreBetMsg MessageType = iota
+	ConfirmedBetMsg
 )
 
 type Message struct {
@@ -12,9 +12,21 @@ type Message struct {
 	payload     interface{}
 }
 
+type ConfirmedBet struct {
+	document string
+	number   string
+}
+
 func StoreBetMessage(bet BetInfo) Message {
 	return Message{
-		messageType: StoreBet,
+		messageType: StoreBetMsg,
+		payload:     bet,
+	}
+}
+
+func ConfirmedBetMessage(bet ConfirmedBet) Message {
+	return Message{
+		messageType: ConfirmedBetMsg,
 		payload:     bet,
 	}
 }

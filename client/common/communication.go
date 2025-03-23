@@ -56,17 +56,17 @@ func (c *CommunicationHandler) recvByte() uint8 {
 	return uint8(c.recv(1)[0])
 }
 
-func (c *CommunicationHandler) recvMsg() (*BetConfirmed, error) {
+func (c *CommunicationHandler) recvMsg() (*Message, error) {
 	msgType := c.recvByte()
 
 	switch msgType {
-	case ConfirmedBet:
+	case ConfirmedBetMsg:
 		return c.recvConfirmedBetMsg()
 	}
 	return nil, fmt.Errorf("invalid message type %d", msgType)
 }
 
-func (c *CommunicationHandler) recvConfirmedBetMsg() (*BetConfirmed, error) {
+func (c *CommunicationHandler) recvConfirmedBetMsg() (*Message, error) {
 	// Decode document
 	documentLen := uint32(c.recvByte())
 	document := string(c.recv(documentLen)[:])
@@ -74,14 +74,10 @@ func (c *CommunicationHandler) recvConfirmedBetMsg() (*BetConfirmed, error) {
 	numberLen := uint32(c.recvByte())
 	number := string(c.recv(numberLen)[:])
 
-	msg := BetConfirmed{
+	payload := ConfirmedBet{
 		document: document,
 		number:   number,
 	}
+	msg := ConfirmedBetMessage(payload)
 	return &msg, nil
-}
-
-type BetConfirmed struct {
-	document string
-	number   string
 }
