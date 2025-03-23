@@ -13,35 +13,21 @@ func (b *BetInfo) serialize() []byte {
 	messageType := byte(0)
 	serializedMsg := make([]byte, 0)
 	serializedMsg = append(serializedMsg, messageType)
-	// Serialize the agency
-	agencyLength := byte(len(b.Agency))
-	serializedMsg = append(serializedMsg, agencyLength)
-	serializedMsg = append(serializedMsg, []byte(b.Agency)...)
 
-	// Serialize the name
-	nameLength := byte(len(b.Name))
-	serializedMsg = append(serializedMsg, nameLength)
-	serializedMsg = append(serializedMsg, []byte(b.Name)...)
-
-	// Serialize the last name
-	lastNameLength := byte(len(b.LastName))
-	serializedMsg = append(serializedMsg, lastNameLength)
-	serializedMsg = append(serializedMsg, []byte(b.LastName)...)
-
-	// Serialize the document
-	documentLength := byte(len(b.Document))
-	serializedMsg = append(serializedMsg, documentLength)
-	serializedMsg = append(serializedMsg, []byte(b.Document)...)
-
-	// Serialize the date of birth
-	dateOfBirthLength := byte(len(b.DateOfBirth))
-	serializedMsg = append(serializedMsg, dateOfBirthLength)
-	serializedMsg = append(serializedMsg, []byte(b.DateOfBirth)...)
-
-	// Serialize the bet number
-	numberLength := byte(len(b.Number))
-	serializedMsg = append(serializedMsg, numberLength)
-	serializedMsg = append(serializedMsg, []byte(b.Number)...)
+	// Serialize the fields
+	serializedMsg = serializeField(serializedMsg, b.Agency)
+	serializedMsg = serializeField(serializedMsg, b.Name)
+	serializedMsg = serializeField(serializedMsg, b.LastName)
+	serializedMsg = serializeField(serializedMsg, b.Document)
+	serializedMsg = serializeField(serializedMsg, b.DateOfBirth)
+	serializedMsg = serializeField(serializedMsg, b.Number)
 
 	return serializedMsg
+}
+
+func serializeField(buf []byte, field string) []byte {
+	fieldLength := byte(len(field))
+	buf = append(buf, fieldLength)
+	buf = append(buf, []byte(field)...)
+	return buf
 }
