@@ -35,12 +35,9 @@ func (c *CommunicationHandler) Connect(address string) error {
 // In case of failure returns an error
 func (c *CommunicationHandler) Send(msg Message) error {
 	serializedMsg := msg.serialize()
-	n, err := c.conn.Write(serializedMsg)
+	_, err := c.conn.Write(serializedMsg)
 	if err != nil {
 		return err
-	}
-	if n < len(serializedMsg) {
-		return fmt.Errorf("expected to send %v bytes but sent %v", len(serializedMsg), n)
 	}
 	return nil
 }
