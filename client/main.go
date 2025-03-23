@@ -103,13 +103,13 @@ func main() {
 	// Print program config with debugging purposes
 	PrintConfig(v)
 
-	// TODO: unhardcode this by reading environment variables
+	// TODO: handle errors
 	betInfo := common.BetInfo{
-		Name:        "Santiago Lionel",
-		LastName:    "Lorca",
-		Document:    "30904465",
-		DateOfBirth: "1999-03-17",
-		Number:      "7574",
+		Name:        os.Getenv("NOMBRE"),
+		LastName:    os.Getenv("APELLIDO"),
+		Document:    os.Getenv("DOCUMENTO"),
+		DateOfBirth: os.Getenv("NACIMIENTO"),
+		Number:      os.Getenv("NUMERO"),
 	}
 
 	clientConfig := common.ClientConfig{
