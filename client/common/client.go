@@ -1,8 +1,6 @@
 package common
 
 import (
-	"io"
-	"net"
 	"os"
 	"os/signal"
 	"sync"
@@ -34,8 +32,8 @@ type ClientConfig struct {
 // Client Entity that encapsulates how
 type Client struct {
 	config          ClientConfig
-	conn            net.Conn
-	mutex           sync.Mutex // Mutex to synchronize the receivedSigTerm flag read/write
+	commHandler     CommunicationHandler
+	mutex           sync.Mutex
 	receivedSigTerm bool
 }
 
@@ -45,24 +43,11 @@ func NewClient(config ClientConfig) *Client {
 	client := &Client{
 		config:          config,
 		receivedSigTerm: false,
+		commHandler: CommunicationHandler{
+			ID: config.ID,
+		},
 	}
 	return client
-}
-
-// CreateClientSocket Initializes client socket. In case of
-// failure, error is printed in stdout/stderr and exit 1
-// is returned
-func (c *Client) createClientSocket() error {
-	conn, err := net.Dial("tcp", c.config.ServerAddress)
-	if err != nil {
-		log.Criticalf(
-			"action: connect | result: fail | client_id: %v | error: %v",
-			c.config.ID,
-			err,
-		)
-	}
-	c.conn = conn
-	return nil
 }
 
 // StartClientLoop Send messages to the client until some time threshold is met
@@ -83,7 +68,7 @@ func (c *Client) StartClientLoop() {
 	// Messages if the message amount threshold has not been surpassed
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
-		c.createClientSocket()
+		c.commHandler.connect(c.config.ServerAddress)
 
 		// Atomically read the SIGTERM flag
 		c.mutex.Lock()
@@ -95,42 +80,28 @@ func (c *Client) StartClientLoop() {
 			c.exitGracefully()
 		}
 		betMsg := c.config.BetInfo.serialize()
-		log.Info("Serialized bet info: %v", betMsg)
-		n, err := c.conn.Write(betMsg)
+		err := c.commHandler.send(betMsg)
 		if err != nil {
-			log.Error("Failed to write bet message. Error: %v", err)
-		}
-		if n < len(betMsg) {
-			log.Info("Expected to write %v bytes, wrote %v bytes", len(betMsg), n)
+			log.Errorf("Failed to send bet message. Error: %s", err)
 		}
 
-		log.Info("Deserializing msgType")
-		msgType := uint8(c.recv(1)[0])
-		log.Info("Deserialized msgType: %v", msgType)
-
-		if msgType == 1 {
-			// Decode document
-			documentLen := uint32(c.recv(1)[0])
-			document := string(c.recv(documentLen)[:])
-			// Decode number
-			numberLen := uint32(c.recv(1)[0])
-			number := string(c.recv(numberLen)[:])
-			log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v", document, number)
+		msg, err := c.commHandler.recv_msg()
+		if err != nil {
+			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
+				c.config.ID,
+				err,
+			)
+			return
 		}
-		c.conn.Close()
+		// TODO: check if this log can be removed
+		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
+			c.config.ID,
+			msg,
+		)
+		log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v", msg.document, msg.number)
 
-		// if err != nil {
-		// 	log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
-		// 		c.config.ID,
-		// 		err,
-		// 	)
-		// 	return
-		// }
-
-		// log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
-		// 	c.config.ID,
-		// 	msg,
-		// )
+		// TODO: add commHandler method for closing
+		c.commHandler.conn.Close()
 
 		// Wait a time between sending one message and the next one
 		time.Sleep(c.config.LoopPeriod)
@@ -138,18 +109,9 @@ func (c *Client) StartClientLoop() {
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
 
-func (c *Client) recv(size uint32) []byte {
-	bytes := make([]byte, size)
-	_, err := io.ReadFull(c.conn, bytes)
-	if err != nil {
-		log.Errorf("Failed to read connection bytes. Error: %v", err)
-	}
-	return bytes
-}
-
 func (c *Client) exitGracefully() {
 	log.Info("Shutting down socket connection")
-	err := c.conn.Close()
+	err := c.commHandler.conn.Close()
 	if err != nil {
 		log.Error("Failed to close connection. Error: ", err)
 		os.Exit(1)
