@@ -1,10 +1,5 @@
 package common
 
-import (
-	"encoding/binary"
-	"reflect"
-)
-
 func (b *BetInfo) serialize() []byte {
 	messageType := byte(0)
 	serializedMsg := make([]byte, 0)
@@ -21,12 +16,9 @@ func (b *BetInfo) serialize() []byte {
 	serializedMsg = append(serializedMsg, []byte(b.LastName)...)
 
 	// Serialize the document
-	documentBytes := make([]byte, 4)
-	documentLength := reflect.TypeOf(b.Document).Size()
-	// Write the document to a byte array
-	binary.BigEndian.PutUint32(documentBytes, b.Document)
-	serializedMsg = append(serializedMsg, byte(documentLength))
-	serializedMsg = append(serializedMsg, documentBytes...)
+	documentLength := byte(len(b.Document))
+	serializedMsg = append(serializedMsg, documentLength)
+	serializedMsg = append(serializedMsg, []byte(b.Document)...)
 
 	// Serialize the date of birth
 	dateOfBirthLength := byte(len(b.DateOfBirth))
@@ -34,12 +26,9 @@ func (b *BetInfo) serialize() []byte {
 	serializedMsg = append(serializedMsg, []byte(b.DateOfBirth)...)
 
 	// Serialize the bet number
-	numberBytes := make([]byte, 4)
-	numberLength := reflect.TypeOf(b.Number).Size()
-	// Write the document to a byte array
-	binary.BigEndian.PutUint32(numberBytes, b.Number)
-	serializedMsg = append(serializedMsg, byte(numberLength))
-	serializedMsg = append(serializedMsg, numberBytes...)
+	numberLength := byte(len(b.Number))
+	serializedMsg = append(serializedMsg, numberLength)
+	serializedMsg = append(serializedMsg, []byte(b.Number)...)
 
 	return serializedMsg
 }

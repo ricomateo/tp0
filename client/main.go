@@ -107,9 +107,9 @@ func main() {
 	betInfo := common.BetInfo{
 		Name:        "Santiago Lionel",
 		LastName:    "Lorca",
-		Document:    30904465,
+		Document:    "30904465",
 		DateOfBirth: "1999-03-17",
-		Number:      7574,
+		Number:      "7574",
 	}
 
 	clientConfig := common.ClientConfig{

@@ -17,9 +17,9 @@ var log = logging.MustGetLogger("log")
 type BetInfo struct {
 	Name        string
 	LastName    string
-	Document    uint32
+	Document    string
 	DateOfBirth string
-	Number      uint32
+	Number      string
 }
 
 // ClientConfig Configuration used by the client

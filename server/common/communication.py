@@ -73,8 +73,7 @@ class CommunicationHandler:
         
         # Deserialize the document
         document_len = int.from_bytes(self._client_sock.recv(1), "big")
-        document_bytes = self._client_sock.recv(document_len)
-        document = int.from_bytes(document_bytes, "big")
+        document = str(self._client_sock.recv(document_len), 'utf-8')
         
         # Deserialize the date of birth
         birthdate_len = int.from_bytes(self._client_sock.recv(1), "big")
@@ -82,8 +81,7 @@ class CommunicationHandler:
 
         # Deserialize the number
         number_len = int.from_bytes(self._client_sock.recv(1), "big")
-        number_value = self._client_sock.recv(number_len)
-        number = int.from_bytes(number_value, "big")
+        number = str(self._client_sock.recv(number_len), 'utf-8')
 
         # TODO: include agency in the message
         agency = "1"
