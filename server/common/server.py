@@ -4,6 +4,7 @@ import signal
 import sys
 
 SOCKET_TIMEOUT = 5
+BET_INFO_MSG_TYPE = 0
 
 class Server:
     def __init__(self, port, listen_backlog):
@@ -39,13 +40,11 @@ class Server:
         client socket will also be closed
         """
         try:
-            # TODO: Modify the receive to avoid short-reads
-            msg = self._client_sock.recv(1024).rstrip().decode('utf-8')
-            bytes_msg = bytes(msg, 'utf-8')
-            field_type = bytes_msg[0]
-            field_len = bytes_msg[1]
-            field_value = bytes_msg[2:2+int(field_len)]
-            logging.info(f"Message data: type: {int(field_type)}, len: {int(field_len)}, value: {str(field_value)}")
+            message_type = int.from_bytes(self._client_sock.recv(1), "big")
+            if message_type == BET_INFO_MSG_TYPE:
+                self.__decode_bet_info()
+
+            msg = "hello"
             addr = self._client_sock.getpeername()
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
             # TODO: Modify the send to avoid short-writes
@@ -54,6 +53,31 @@ class Server:
             logging.error("action: receive_message | result: fail | error: {e}")
         finally:
             self._client_sock.close()
+
+    def __decode_bet_info(self):
+        # Deserialize the name
+        name_len = int.from_bytes(self._client_sock.recv(1), "big")
+        name = str(self._client_sock.recv(name_len))
+
+        # Deserialize the last name
+        last_name_len = int.from_bytes(self._client_sock.recv(1), "big")
+        last_name = str(self._client_sock.recv(last_name_len))
+        
+        # Deserialize the document
+        document_len = int.from_bytes(self._client_sock.recv(1), "big")
+        document_bytes = self._client_sock.recv(document_len)
+        document = int.from_bytes(document_bytes, "big")
+        
+        # Deserialize the date of birth
+        date_of_birth_len = int.from_bytes(self._client_sock.recv(1), "big")
+        date_of_birth = str(self._client_sock.recv(date_of_birth_len))
+
+        # Deserialize the number
+        number_len = int.from_bytes(self._client_sock.recv(1), "big")
+        number_value = self._client_sock.recv(number_len)
+        number = int.from_bytes(number_value, "big")
+
+        logging.info(f"Message data: name: {name}, last_name: {last_name}, document: {document}, date of birth: {date_of_birth}, number: {number}")
 
     def __accept_new_connection(self):
         """
