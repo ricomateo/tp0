@@ -38,6 +38,10 @@ func (c *CommunicationHandler) send(msg []byte) error {
 	return nil
 }
 
+func (c *CommunicationHandler) disconnect() error {
+	return c.conn.Close()
+}
+
 func (c *CommunicationHandler) recv(size uint32) []byte {
 	bytes := make([]byte, size)
 	_, err := io.ReadFull(c.conn, bytes)

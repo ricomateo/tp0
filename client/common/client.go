@@ -100,8 +100,7 @@ func (c *Client) StartClientLoop() {
 		)
 		log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v", msg.document, msg.number)
 
-		// TODO: add commHandler method for closing
-		c.commHandler.conn.Close()
+		c.commHandler.disconnect()
 
 		// Wait a time between sending one message and the next one
 		time.Sleep(c.config.LoopPeriod)
@@ -111,8 +110,7 @@ func (c *Client) StartClientLoop() {
 
 func (c *Client) exitGracefully() {
 	log.Info("Shutting down socket connection")
-
-	err := c.commHandler.conn.Close()
+	err := c.commHandler.disconnect()
 	if err != nil {
 		log.Error("Failed to close connection. Error: ", err)
 		os.Exit(1)
