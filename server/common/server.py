@@ -3,6 +3,8 @@ import logging
 import signal
 import sys
 
+SOCKET_TIMEOUT = 5
+
 class Server:
     def __init__(self, port, listen_backlog):
         # Set the SIGTERM handler
@@ -11,6 +13,8 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
+        # Set socket timeout to check for the signal flag
+        self._server_socket.settimeout(SOCKET_TIMEOUT)
         self._client_sock = None
         self._received_sig_term = False
 
@@ -24,8 +28,6 @@ class Server:
         """
 
         while True:
-            if self._received_sig_term:
-                self.__exit_gracefully()
             self._client_sock = self.__accept_new_connection()
             self.__handle_client_connection()
 
@@ -52,23 +54,34 @@ class Server:
         """
         Accept new connections
 
-        Function blocks until a connection to a client is made.
-        Then connection created is printed and returned
+        Function blocks for SOCKET_TIMEOUT seconds until a connection to a client is made.
+        Then connection created is printed and returned.
+        If a SIGTERM signal has been received by the time the socket times out,
+        then the server exits gracefully.
         """
 
-        # Connection arrived
-        logging.info('action: accept_connections | result: in_progress')
-        c, addr = self._server_socket.accept()
-        logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
-        return c
+        while True:
+            if self._received_sig_term:
+                self.__exit_gracefully()
+            try:
+                # Connection arrived
+                logging.info('action: accept_connections | result: in_progress')
+                c, addr = self._server_socket.accept()
+                logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
+                return c
+            except socket.timeout:
+                # This timeout allows to check for the SIGTERM signal more regularly
+                continue
 
-    def __sigterm_handler(self, signum, frame):
-        self._received_sig_term = True
+    def __sigterm_handler(self, signum, _):
+        if signum == signal.SIGTERM:
+            # This assignment is atomic
+            self._received_sig_term = True
 
     def __exit_gracefully(self):
-        logging.info("Received SIGTERM signal, exiting gracefully")
-        self._server_socket.shutdown(socket.SHUT_RDWR)
+        logging.info("Exiting gracefully")
         logging.info("Shutting down server")
+        self._server_socket.shutdown(socket.SHUT_RDWR)
         if self._client_sock is not None:
             logging.info("Closing socket connection")
             self._client_sock.close()
