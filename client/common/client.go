@@ -117,6 +117,7 @@ func (c *Client) StartClientLoop() {
 }
 
 func (c *Client) exitGracefully() {
+	log.Info("Shutting down socket connection")
 	err := c.conn.Close()
 	if err != nil {
 		log.Error("Failed to close connection. Error: ", err)
