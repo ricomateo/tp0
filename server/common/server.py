@@ -41,6 +41,11 @@ class Server:
         try:
             # TODO: Modify the receive to avoid short-reads
             msg = self._client_sock.recv(1024).rstrip().decode('utf-8')
+            bytes_msg = bytes(msg, 'utf-8')
+            field_type = bytes_msg[0]
+            field_len = bytes_msg[1]
+            field_value = bytes_msg[2:2+int(field_len)]
+            logging.info(f"Message data: type: {int(field_type)}, len: {int(field_len)}, value: {str(field_value)}")
             addr = self._client_sock.getpeername()
             logging.info(f'action: receive_message | result: success | ip: {addr[0]} | msg: {msg}')
             # TODO: Modify the send to avoid short-writes

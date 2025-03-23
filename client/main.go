@@ -103,11 +103,21 @@ func main() {
 	// Print program config with debugging purposes
 	PrintConfig(v)
 
+	// TODO: unhardcode this by reading environment variables
+	betInfo := common.BetInfo{
+		Name:        "Santiago Lionel",
+		LastName:    "Lorca",
+		Document:    30904465,
+		DateOfBirth: "1999-03-17",
+		Number:      7574,
+	}
+
 	clientConfig := common.ClientConfig{
 		ServerAddress: v.GetString("server.address"),
 		ID:            v.GetString("id"),
 		LoopAmount:    v.GetInt("loop.amount"),
 		LoopPeriod:    v.GetDuration("loop.period"),
+		BetInfo:       betInfo,
 	}
 
 	client := common.NewClient(clientConfig)

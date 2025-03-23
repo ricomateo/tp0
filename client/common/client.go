@@ -2,7 +2,6 @@ package common
 
 import (
 	"bufio"
-	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -15,12 +14,21 @@ import (
 
 var log = logging.MustGetLogger("log")
 
+type BetInfo struct {
+	Name        string
+	LastName    string
+	Document    uint
+	DateOfBirth string
+	Number      uint
+}
+
 // ClientConfig Configuration used by the client
 type ClientConfig struct {
 	ID            string
 	ServerAddress string
 	LoopAmount    int
 	LoopPeriod    time.Duration
+	BetInfo       BetInfo
 }
 
 // Client Entity that encapsulates how
@@ -86,14 +94,16 @@ func (c *Client) StartClientLoop() {
 		if receivedSigTerm {
 			c.exitGracefully()
 		}
+		betMsg := c.config.BetInfo.serialize()
+		log.Info("Serialized bet info: %v", betMsg)
+		n, err := c.conn.Write(betMsg)
+		if err != nil {
+			log.Error("Failed to write bet message. Error: %v", err)
+		}
+		if n < len(betMsg) {
+			log.Info("Expected to write %v bytes, wrote %v bytes", len(betMsg), n)
+		}
 
-		// TODO: Modify the send to avoid short-write
-		fmt.Fprintf(
-			c.conn,
-			"[CLIENT %v] Message N°%v\n",
-			c.config.ID,
-			msgID,
-		)
 		msg, err := bufio.NewReader(c.conn).ReadString('\n')
 		c.conn.Close()
 
