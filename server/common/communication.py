@@ -81,32 +81,26 @@ class CommunicationHandler:
 
     def __decode_bet_info(self) -> Bet:
         # TODO: add error handling
-        # Deserialize the name
-        agency_len = int.from_bytes(self._client_sock.recv(1), "big")
-        agency = str(self._client_sock.recv(agency_len), 'utf-8')
-
-        name_len = int.from_bytes(self._client_sock.recv(1), "big")
-        name = str(self._client_sock.recv(name_len), 'utf-8')
-
-        # Deserialize the last name
-        last_name_len = int.from_bytes(self._client_sock.recv(1), "big")
-        last_name = str(self._client_sock.recv(last_name_len), 'utf-8')
-        
-        # Deserialize the document
-        document_len = int.from_bytes(self._client_sock.recv(1), "big")
-        document = str(self._client_sock.recv(document_len), 'utf-8')
-        
-        # Deserialize the date of birth
-        birthdate_len = int.from_bytes(self._client_sock.recv(1), "big")
-        birthdate = str(self._client_sock.recv(birthdate_len), 'utf-8')
-
-        # Deserialize the number
-        number_len = int.from_bytes(self._client_sock.recv(1), "big")
-        number = str(self._client_sock.recv(number_len), 'utf-8')
+        # Deserialize the fields
+        agency = self.__recv_str()
+        name = self.__recv_str()
+        last_name = self.__recv_str()
+        document = self.__recv_str()
+        birthdate = self.__recv_str()
+        number = self.__recv_str()
         
         logging.info(f"Message data: agency: {agency} name: {name}, last_name: {last_name}, document: {document}, birthdate: {birthdate}, number: {number}")
         return Bet(agency, name, last_name, str(document), birthdate, str(number))
     
+    def __recv_str(self) -> str:
+        """
+        Reads and return a string from the current socket connection.
+        The string is decoded by first reading its length, and then the value.
+        """
+        str_len = int.from_bytes(self._client_sock.recv(1), "big")
+        string = str(self._client_sock.recv(str_len), 'utf-8')
+        return string
+
     def __sigterm_handler(self, signum, _):
         if signum == signal.SIGTERM:
             # This assignment is atomic
