@@ -5,12 +5,14 @@ import sys
 
 class Server:
     def __init__(self, port, listen_backlog):
+        # Set the SIGTERM handler
+        signal.signal(signal.SIGTERM, self.__sigterm_handler)
         # Initialize server socket
-        signal.signal(signal.SIGTERM, self.__exit_gracefully)
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
         self._client_sock = None
+        self._received_sig_term = False
 
     def run(self):
         """
@@ -21,9 +23,9 @@ class Server:
         finishes, servers starts to accept new connections again
         """
 
-        # TODO: Modify this program to handle signal to graceful shutdown
-        # the server
         while True:
+            if self._received_sig_term:
+                self.__exit_gracefully()
             self._client_sock = self.__accept_new_connection()
             self.__handle_client_connection()
 
@@ -60,7 +62,10 @@ class Server:
         logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
         return c
 
-    def __exit_gracefully(self, signum, frame):
+    def __sigterm_handler(self, signum, frame):
+        self._received_sig_term = True
+
+    def __exit_gracefully(self):
         logging.info("Received SIGTERM signal, exiting gracefully")
         self._server_socket.shutdown(socket.SHUT_RDWR)
         if self._client_sock is not None:
