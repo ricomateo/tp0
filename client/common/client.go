@@ -7,19 +7,11 @@ import (
 	"syscall"
 	"time"
 
+	comm "github.com/7574-sistemas-distribuidos/docker-compose-init/client/communication"
 	"github.com/op/go-logging"
 )
 
 var log = logging.MustGetLogger("log")
-
-type BetInfo struct {
-	Agency      string
-	Name        string
-	LastName    string
-	Document    string
-	DateOfBirth string
-	Number      string
-}
 
 // ClientConfig Configuration used by the client
 type ClientConfig struct {
@@ -27,13 +19,13 @@ type ClientConfig struct {
 	ServerAddress string
 	LoopAmount    int
 	LoopPeriod    time.Duration
-	BetInfo       BetInfo
+	BetInfo       comm.BetInfo
 }
 
 // Client Entity that encapsulates how
 type Client struct {
 	config          ClientConfig
-	commHandler     CommunicationHandler
+	commHandler     comm.CommunicationHandler
 	mutex           sync.Mutex
 	receivedSigTerm bool
 }
@@ -44,7 +36,7 @@ func NewClient(config ClientConfig) *Client {
 	client := &Client{
 		config:          config,
 		receivedSigTerm: false,
-		commHandler: CommunicationHandler{
+		commHandler: comm.CommunicationHandler{
 			ID: config.ID,
 		},
 	}
@@ -69,7 +61,7 @@ func (c *Client) StartClientLoop() {
 	// Messages if the message amount threshold has not been surpassed
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
 		// Create the connection the server in every loop iteration. Send an
-		c.commHandler.connect(c.config.ServerAddress)
+		c.commHandler.Connect(c.config.ServerAddress)
 
 		// Atomically read the SIGTERM flag
 		c.mutex.Lock()
@@ -82,14 +74,14 @@ func (c *Client) StartClientLoop() {
 		}
 
 		// Send the storeBet message
-		storeBetMsg := StoreBetMessage(c.config.BetInfo)
-		err := c.commHandler.send(storeBetMsg)
+		storeBetMsg := comm.StoreBetMessage(c.config.BetInfo)
+		err := c.commHandler.Send(storeBetMsg)
 		if err != nil {
 			log.Errorf("Failed to send bet message. Error: %s", err)
 		}
 
 		// Receive response message
-		msg, err := c.commHandler.recvMsg()
+		msg, err := c.commHandler.RecvMsg()
 		if err != nil {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
 				c.config.ID,
@@ -102,12 +94,12 @@ func (c *Client) StartClientLoop() {
 			c.config.ID,
 			msg,
 		)
-		if msg.messageType == ConfirmedBetMsg {
-			msg := msg.payload.(ConfirmedBet)
-			log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v", msg.document, msg.number)
+		if msg.MessageType == comm.ConfirmedBetMsg {
+			msg := msg.Payload.(comm.ConfirmedBet)
+			log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v", msg.Document, msg.Number)
 		}
 
-		c.commHandler.disconnect()
+		c.commHandler.Disconnect()
 
 		// Wait a time between sending one message and the next one
 		time.Sleep(c.config.LoopPeriod)
@@ -115,9 +107,10 @@ func (c *Client) StartClientLoop() {
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
 
+// TODO: consider moving this to the communicationHandler
 func (c *Client) exitGracefully() {
 	log.Info("Shutting down socket connection")
-	err := c.commHandler.disconnect()
+	err := c.commHandler.Disconnect()
 	if err != nil {
 		log.Error("Failed to close connection. Error: ", err)
 		os.Exit(1)

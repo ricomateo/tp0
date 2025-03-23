@@ -1,9 +1,9 @@
-package common
+package communication
 
 func (m *Message) serialize() []byte {
-	switch m.messageType {
+	switch m.MessageType {
 	case StoreBetMsg:
-		payload := m.payload.(BetInfo)
+		payload := m.Payload.(BetInfo)
 		return payload.serialize()
 	}
 	return []byte{}

@@ -1,9 +1,11 @@
-package common
+package communication
 
 import (
 	"fmt"
 	"io"
 	"net"
+
+	"github.com/op/go-logging"
 )
 
 type CommunicationHandler struct {
@@ -11,10 +13,12 @@ type CommunicationHandler struct {
 	conn net.Conn
 }
 
-// CreateClientSocket Initializes client socket. In case of
-// failure, error is printed in stdout/stderr and exit 1
+var log = logging.MustGetLogger("log")
+
+// Connect Initializes client socket, connecting to the given address.
+// In case of failure, error is printed in stdout/stderr and exit 1
 // is returned
-func (c *CommunicationHandler) connect(address string) error {
+func (c *CommunicationHandler) Connect(address string) error {
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
 		log.Criticalf(
@@ -27,7 +31,7 @@ func (c *CommunicationHandler) connect(address string) error {
 	return nil
 }
 
-func (c *CommunicationHandler) send(msg Message) error {
+func (c *CommunicationHandler) Send(msg Message) error {
 	serializedMsg := msg.serialize()
 	n, err := c.conn.Write(serializedMsg)
 	if err != nil {
@@ -39,8 +43,18 @@ func (c *CommunicationHandler) send(msg Message) error {
 	return nil
 }
 
-func (c *CommunicationHandler) disconnect() error {
+func (c *CommunicationHandler) Disconnect() error {
 	return c.conn.Close()
+}
+
+func (c *CommunicationHandler) RecvMsg() (*Message, error) {
+	msgType := c.recvByte()
+
+	switch msgType {
+	case ConfirmedBetMsg:
+		return c.recvConfirmedBetMsg()
+	}
+	return nil, fmt.Errorf("invalid message type %d", msgType)
 }
 
 func (c *CommunicationHandler) recv(size uint32) []byte {
@@ -56,16 +70,6 @@ func (c *CommunicationHandler) recvByte() uint8 {
 	return uint8(c.recv(1)[0])
 }
 
-func (c *CommunicationHandler) recvMsg() (*Message, error) {
-	msgType := c.recvByte()
-
-	switch msgType {
-	case ConfirmedBetMsg:
-		return c.recvConfirmedBetMsg()
-	}
-	return nil, fmt.Errorf("invalid message type %d", msgType)
-}
-
 func (c *CommunicationHandler) recvConfirmedBetMsg() (*Message, error) {
 	// Decode document
 	documentLen := uint32(c.recvByte())
@@ -75,8 +79,8 @@ func (c *CommunicationHandler) recvConfirmedBetMsg() (*Message, error) {
 	number := string(c.recv(numberLen)[:])
 
 	payload := ConfirmedBet{
-		document: document,
-		number:   number,
+		Document: document,
+		Number:   number,
 	}
 	msg := ConfirmedBetMessage(payload)
 	return &msg, nil

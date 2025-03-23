@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/common"
+	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/communication"
 )
 
 var log = logging.MustGetLogger("log")
@@ -104,7 +105,7 @@ func main() {
 	PrintConfig(v)
 
 	// TODO: handle errors
-	betInfo := common.BetInfo{
+	betInfo := communication.BetInfo{
 		Agency:      os.Getenv("AGENCIA"),
 		Name:        os.Getenv("NOMBRE"),
 		LastName:    os.Getenv("APELLIDO"),
