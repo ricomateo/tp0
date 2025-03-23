@@ -55,7 +55,8 @@ class CommunicationHandler:
                 return self.__decode_bet_info()
 
         except OSError as e:
-            logging.error("action: receive_message | result: fail | error: {e}")
+            logging.error(f"action: receive_message | result: fail | error: {e}")
+            raise
 
     def send_bet_confirmation(self, bet: Bet):
         """
@@ -83,7 +84,6 @@ class CommunicationHandler:
         """
         Reads and returns a Bet message from the current socket connection.
         """
-        # TODO: add error handling
         # Deserialize the fields
         agency = self.__recv_str()
         name = self.__recv_str()

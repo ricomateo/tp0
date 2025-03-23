@@ -19,12 +19,15 @@ class Server:
         finishes, servers starts to accept new connections again
         """
         while True:
-            self.__communication_handler.accept_new_connection()
-            bet = self.__communication_handler.recv_msg()
-            # TODO: handle possible storage error
-            # TODO: process the message
-            logging.info(f"Received msg: {bet}")
-            store_bets([bet])
-            logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
-            self.__communication_handler.send_bet_confirmation(bet)
-            self.__communication_handler.close_current_connection()
+            try:
+                self.__communication_handler.accept_new_connection()
+                bet = self.__communication_handler.recv_msg()
+                store_bets([bet])
+                logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
+                self.__communication_handler.send_bet_confirmation(bet)
+                
+            except Exception as e:
+                logging.error(f"failed to handle client connection. Error: {e}")
+            finally:
+                self.__communication_handler.close_current_connection()
+
