@@ -27,13 +27,14 @@ func (c *CommunicationHandler) connect(address string) error {
 	return nil
 }
 
-func (c *CommunicationHandler) send(msg []byte) error {
-	n, err := c.conn.Write(msg)
+func (c *CommunicationHandler) send(msg Message) error {
+	serializedMsg := msg.serialize()
+	n, err := c.conn.Write(serializedMsg)
 	if err != nil {
 		return err
 	}
-	if n < len(msg) {
-		return fmt.Errorf("expected to send %v bytes but sent %v", len(msg), n)
+	if n < len(serializedMsg) {
+		return fmt.Errorf("expected to send %v bytes but sent %v", len(serializedMsg), n)
 	}
 	return nil
 }
@@ -51,18 +52,26 @@ func (c *CommunicationHandler) recv(size uint32) []byte {
 	return bytes
 }
 
-func (c *CommunicationHandler) recv_msg() (*BetConfirmed, error) {
-	msgType := uint8(c.recv(1)[0])
+func (c *CommunicationHandler) recvByte() uint8 {
+	return uint8(c.recv(1)[0])
+}
 
-	if msgType != 1 {
-		return nil, fmt.Errorf("invalid message type %d", msgType)
+func (c *CommunicationHandler) recvMsg() (*BetConfirmed, error) {
+	msgType := c.recvByte()
+
+	switch msgType {
+	case ConfirmedBet:
+		return c.recvConfirmedBetMsg()
 	}
+	return nil, fmt.Errorf("invalid message type %d", msgType)
+}
 
+func (c *CommunicationHandler) recvConfirmedBetMsg() (*BetConfirmed, error) {
 	// Decode document
-	documentLen := uint32(c.recv(1)[0])
+	documentLen := uint32(c.recvByte())
 	document := string(c.recv(documentLen)[:])
 	// Decode number
-	numberLen := uint32(c.recv(1)[0])
+	numberLen := uint32(c.recvByte())
 	number := string(c.recv(numberLen)[:])
 
 	msg := BetConfirmed{

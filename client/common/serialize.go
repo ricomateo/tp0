@@ -1,5 +1,14 @@
 package common
 
+func (m *Message) serialize() []byte {
+	switch m.messageType {
+	case StoreBet:
+		payload := m.payload.(BetInfo)
+		return payload.serialize()
+	}
+	return []byte{}
+}
+
 func (b *BetInfo) serialize() []byte {
 	messageType := byte(0)
 	serializedMsg := make([]byte, 0)

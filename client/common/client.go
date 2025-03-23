@@ -80,13 +80,16 @@ func (c *Client) StartClientLoop() {
 		if receivedSigTerm {
 			c.exitGracefully()
 		}
-		betMsg := c.config.BetInfo.serialize()
-		err := c.commHandler.send(betMsg)
+
+		// Send the storeBet message
+		storeBetMsg := StoreBetMessage(c.config.BetInfo)
+		err := c.commHandler.send(storeBetMsg)
 		if err != nil {
 			log.Errorf("Failed to send bet message. Error: %s", err)
 		}
 
-		msg, err := c.commHandler.recv_msg()
+		// Receive response message
+		msg, err := c.commHandler.recvMsg()
 		if err != nil {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
 				c.config.ID,
