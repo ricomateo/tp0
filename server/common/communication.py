@@ -62,6 +62,7 @@ class CommunicationHandler:
             logging.error("action: receive_message | result: fail | error: {e}")
 
     def __decode_bet_info(self):
+        # TODO: add error handling
         # Deserialize the name
         name_len = int.from_bytes(self._client_sock.recv(1), "big")
         name = str(self._client_sock.recv(name_len), 'utf-8')
