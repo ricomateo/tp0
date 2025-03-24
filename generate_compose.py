@@ -23,13 +23,6 @@ def generate_compose(base_file, output_file, clients):
     for client in clients_to_delete:
         del compose["services"][client]
 
-    # Bet data (works with up to 5 clients)
-    names = ["Juan", "Maria", "Nicolas", "Juana", "Santiago"]
-    last_name = "Perez" # Same last name for all clients, for simplicty
-    document = 40_000_000
-    birthday = "2000-01-01"
-    number = 100
-
     for i in range(1, clients + 1):
         compose["services"][f"client{i}"] = {
             "container_name": f"client{i}",
@@ -37,12 +30,6 @@ def generate_compose(base_file, output_file, clients):
             "entrypoint": "/client",
             "environment": [
                 "CLI_ID=1",
-                f"AGENCIA={i}",
-                f"NOMBRE={names[i - 1]}",
-                f"APELLIDO={last_name}",
-                f"DOCUMENTO={document + i}",
-                f"NACIMIENTO={birthday[:-1] + str(i)}",
-                f"NUMERO={number + i}",
             ],
             "networks": ["testing_net"],
             "depends_on": ["server"],
