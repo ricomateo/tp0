@@ -4,21 +4,17 @@ type MessageType = uint8
 
 // The different types of messages
 const (
-	StoreBetMsg MessageType = iota
-	ConfirmedBetMsg
-	StoreBetBatchMsg
+	StoreBetBatchMsg MessageType = iota
+	BatchConfirmationMsg
 )
 
-// Message struct containing the message type and its payload
-type Message struct {
-	MessageType MessageType
-	Payload     interface{}
-}
+type BatchStatus = uint8
 
-type ConfirmedBet struct {
-	Document string
-	Number   string
-}
+// The different types of messages
+const (
+	Failure BatchStatus = iota
+	Success
+)
 
 type BetInfo struct {
 	Agency      string
@@ -29,23 +25,6 @@ type BetInfo struct {
 	Number      string
 }
 
-func StoreBetMessage(bet BetInfo) Message {
-	return Message{
-		MessageType: StoreBetMsg,
-		Payload:     bet,
-	}
-}
-
-func StoreBetBatchMessage(bets []BetInfo) Message {
-	return Message{
-		MessageType: StoreBetBatchMsg,
-		Payload:     bets,
-	}
-}
-
-func ConfirmedBetMessage(bet ConfirmedBet) Message {
-	return Message{
-		MessageType: ConfirmedBetMsg,
-		Payload:     bet,
-	}
+type BatchConfirmation struct {
+	Status BatchStatus
 }

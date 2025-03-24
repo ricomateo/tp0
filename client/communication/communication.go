@@ -33,8 +33,8 @@ func (c *CommunicationHandler) Connect(address string) error {
 
 // Send sends the given message through the current socket connection.
 // In case of failure returns an error
-func (c *CommunicationHandler) Send(msg Message) error {
-	serializedMsg := msg.serialize()
+func (c *CommunicationHandler) SendBatch(bets []BetInfo) error {
+	serializedMsg := serializeBets(bets)
 	_, err := c.conn.Write(serializedMsg)
 	if err != nil {
 		return err
@@ -50,14 +50,14 @@ func (c *CommunicationHandler) Disconnect() error {
 
 // RecvMsg blocks waiting for a message.
 // Returns an error in case of failure
-func (c *CommunicationHandler) RecvMsg() (*Message, error) {
+func (c *CommunicationHandler) RecvMsg() (*BatchConfirmation, error) {
 	msgType := c.recvByte()
 
-	switch msgType {
-	case ConfirmedBetMsg:
-		return c.recvConfirmedBetMsg()
+	if msgType == BatchConfirmationMsg {
+		status := c.recvByte()
+		return &BatchConfirmation{Status: status}, nil
 	}
-	return nil, fmt.Errorf("invalid message type %d", msgType)
+	return nil, fmt.Errorf("received invalid message type %d", msgType)
 }
 
 // recv returns `size` bytes read from the socket
@@ -73,21 +73,4 @@ func (c *CommunicationHandler) recv(size uint32) []byte {
 // recvByte returns a single byte read from the socket
 func (c *CommunicationHandler) recvByte() uint8 {
 	return uint8(c.recv(1)[0])
-}
-
-// recvConfirmedMsg reads and deserializes a message into a ConfirmedBet message.
-func (c *CommunicationHandler) recvConfirmedBetMsg() (*Message, error) {
-	// Decode document
-	documentLen := uint32(c.recvByte())
-	document := string(c.recv(documentLen)[:])
-	// Decode number
-	numberLen := uint32(c.recvByte())
-	number := string(c.recv(numberLen)[:])
-
-	payload := ConfirmedBet{
-		Document: document,
-		Number:   number,
-	}
-	msg := ConfirmedBetMessage(payload)
-	return &msg, nil
 }

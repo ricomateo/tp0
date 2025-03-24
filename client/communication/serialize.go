@@ -2,37 +2,6 @@ package communication
 
 import "encoding/binary"
 
-// serialize serializes the given message
-func (m *Message) serialize() []byte {
-	switch m.MessageType {
-	case StoreBetMsg:
-		payload := m.Payload.(BetInfo)
-		return payload.serialize()
-	case StoreBetBatchMsg:
-		payload := m.Payload.([]BetInfo)
-		return serializeBets(payload)
-	}
-
-	return []byte{}
-}
-
-// serialize serializes the BetInfo payload
-func (b *BetInfo) serialize() []byte {
-	messageType := byte(StoreBetMsg)
-	serializedMsg := make([]byte, 0)
-	serializedMsg = append(serializedMsg, messageType)
-
-	// Serialize the fields
-	serializedMsg = serializeField(serializedMsg, b.Agency)
-	serializedMsg = serializeField(serializedMsg, b.Name)
-	serializedMsg = serializeField(serializedMsg, b.LastName)
-	serializedMsg = serializeField(serializedMsg, b.Document)
-	serializedMsg = serializeField(serializedMsg, b.DateOfBirth)
-	serializedMsg = serializeField(serializedMsg, b.Number)
-
-	return serializedMsg
-}
-
 func serializeBets(bets []BetInfo) []byte {
 	messageType := byte(StoreBetBatchMsg)
 	serializedMsg := make([]byte, 0)

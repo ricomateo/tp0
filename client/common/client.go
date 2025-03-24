@@ -63,18 +63,18 @@ func (c *Client) StartClientLoop() {
 
 	file, err := os.Open("/agency.csv")
 	if err != nil {
-		log.Info("Error when opening file: %v", err)
+		log.Errorf("Failed to open agency file: %v", err)
+		return
 	}
 
-	log.Info("MAX BATCH SIZE = %d", c.config.BatchSize)
 	fileScanner := bufio.NewScanner(file)
-
-	// There is an autoincremental msgID to identify every message sent
-	// Messages if the message amount threshold has not been surpassed
-	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
-		// Create the connection the server in every loop iteration. Send an
-		c.commHandler.Connect(c.config.ServerAddress)
-
+	// Scan() returns false when it gets to the end of the file
+	for fileScanner.Scan() {
+		err := c.commHandler.Connect(c.config.ServerAddress)
+		if err != nil {
+			log.Errorf("Failed to connect to the server. Error: %v", err)
+			return
+		}
 		// Atomically read the SIGTERM flag
 		c.mutex.Lock()
 		receivedSigTerm := c.receivedSigTerm
@@ -85,36 +85,10 @@ func (c *Client) StartClientLoop() {
 			c.exitGracefully()
 		}
 
-		bets := []comm.BetInfo{}
-		// TODO: extract this to a different function
-		for i := 0; i < c.config.BatchSize; i++ {
-			fileScanner.Scan()
-			line := fileScanner.Text()
-			fields := strings.Split(line, ",")
-			if len(fields) < 5 {
-				log.Error("Agency bet record missing fields")
-				continue
-			}
-			name := fields[0]
-			lastName := fields[1]
-			document := fields[2]
-			birthdate := fields[3]
-			number := fields[4]
-			bet := comm.BetInfo{
-				Agency:      c.config.ID,
-				Name:        name,
-				LastName:    lastName,
-				Document:    document,
-				DateOfBirth: birthdate,
-				Number:      number,
-			}
-			bets = append(bets, bet)
-			log.Info("Parsing agency file lines: %v", bet)
-		}
-
-		// Send the storeBet message
-		storeBetBatchMsg := comm.StoreBetBatchMessage(bets)
-		err := c.commHandler.Send(storeBetBatchMsg)
+		// Get the next batch of bets
+		batch := c.getBatch(fileScanner)
+		// Send the batch
+		err = c.commHandler.SendBatch(batch)
 		if err != nil {
 			log.Errorf("Failed to send bet message. Error: %s", err)
 		}
@@ -132,18 +106,49 @@ func (c *Client) StartClientLoop() {
 			c.config.ID,
 			msg,
 		)
-		if msg.MessageType == comm.ConfirmedBetMsg {
-			msg := msg.Payload.(comm.ConfirmedBet)
-			log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v", msg.Document, msg.Number)
+		if msg.Status == comm.Failure {
+			log.Errorf("action: batch_enviado | result: failure")
+		} else {
+			log.Info("action: batch_enviado | result: success")
 		}
-
-		// TODO: change this to only disconnect after sending all the batches
-		c.commHandler.Disconnect()
 
 		// Wait a time between sending one message and the next one
 		time.Sleep(c.config.LoopPeriod)
+		c.commHandler.Disconnect()
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
+}
+
+func (c *Client) getBatch(fileScanner *bufio.Scanner) []comm.BetInfo {
+	bets := []comm.BetInfo{}
+	for i := 0; i < c.config.BatchSize; i++ {
+		line := fileScanner.Text()
+		fields := strings.Split(line, ",")
+		if len(fields) < 5 {
+			log.Error("Failed to parse bet record. Error: missing fields")
+			continue
+		}
+		name := fields[0]
+		lastName := fields[1]
+		document := fields[2]
+		birthdate := fields[3]
+		number := fields[4]
+		bet := comm.BetInfo{
+			Agency:      c.config.ID,
+			Name:        name,
+			LastName:    lastName,
+			Document:    document,
+			DateOfBirth: birthdate,
+			Number:      number,
+		}
+		log.Info("Parsed bet: %v", bet)
+		bets = append(bets, bet)
+		// if Scan() return false it means there is no more data to read
+		if !fileScanner.Scan() {
+			break
+		}
+	}
+	return bets
 }
 
 func (c *Client) exitGracefully() {
