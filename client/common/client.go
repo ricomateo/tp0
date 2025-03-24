@@ -1,8 +1,10 @@
 package common
 
 import (
+	"bufio"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -20,6 +22,7 @@ type ClientConfig struct {
 	LoopAmount    int
 	LoopPeriod    time.Duration
 	BetInfo       comm.BetInfo
+	BatchSize     int
 }
 
 // Client Entity that encapsulates how
@@ -57,6 +60,15 @@ func (c *Client) StartClientLoop() {
 			c.mutex.Unlock()
 		}
 	}()
+
+	file, err := os.Open("/agency.csv")
+	if err != nil {
+		log.Info("Error when opening file: %v", err)
+	}
+
+	log.Info("MAX BATCH SIZE = %d", c.config.BatchSize)
+	fileScanner := bufio.NewScanner(file)
+
 	// There is an autoincremental msgID to identify every message sent
 	// Messages if the message amount threshold has not been surpassed
 	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
@@ -73,12 +85,34 @@ func (c *Client) StartClientLoop() {
 			c.exitGracefully()
 		}
 
+		bets := []comm.BetInfo{}
+		// TODO: extract this to a different function
+		for i := 0; i < c.config.BatchSize; i++ {
+			fileScanner.Scan()
+			line := fileScanner.Text()
+			fields := strings.Split(line, ",")
+			if len(fields) < 5 {
+				log.Error("Agency bet record missing fields")
+				continue
+			}
+			name := fields[0]
+			lastName := fields[1]
+			document := fields[2]
+			birthdate := fields[3]
+			number := fields[4]
+			bet := comm.BetInfo{
+				Agency:      c.config.ID,
+				Name:        name,
+				LastName:    lastName,
+				Document:    document,
+				DateOfBirth: birthdate,
+				Number:      number,
+			}
+			bets = append(bets, bet)
+			log.Info("Parsing agency file lines: %v", bet)
+		}
+
 		// Send the storeBet message
-		bet2 := c.config.BetInfo
-		bet2.Name = "Mario"
-		bet3 := c.config.BetInfo
-		bet3.Name = "Arnaldo"
-		bets := []comm.BetInfo{c.config.BetInfo, bet2, bet3}
 		storeBetBatchMsg := comm.StoreBetBatchMessage(bets)
 		err := c.commHandler.Send(storeBetBatchMsg)
 		if err != nil {
@@ -103,6 +137,7 @@ func (c *Client) StartClientLoop() {
 			log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v", msg.Document, msg.Number)
 		}
 
+		// TODO: change this to only disconnect after sending all the batches
 		c.commHandler.Disconnect()
 
 		// Wait a time between sending one message and the next one
