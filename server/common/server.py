@@ -7,7 +7,7 @@ from common.utils import store_bets
 class Server:
     def __init__(self, port, listen_backlog):
         self.__communication_handler = CommunicationHandler(port, listen_backlog)
-        
+        self.finished_agencies = set()
 
     def run(self):
         """
@@ -30,7 +30,9 @@ class Server:
 
                 elif message_type == FINALIZATION_MSG_TYPE:
                     agency_id = payload
-                    logging.info(f"Agency with id {agency_id} finished!!!")
+                    self._set_agency_as_finished(agency_id)
+                    if self._all_agencies_finished():
+                        logging.info(f"All agencies finished!")
                 else:
                     # TODO: raise an error
                     logging.info(f"Invalid message_type = {message_type}")
@@ -43,3 +45,12 @@ class Server:
             finally:
                 self.__communication_handler.close_current_connection()
 
+    def _all_agencies_finished(self) -> bool:
+        agencies_ids = list(range(1, 6))
+        for id in agencies_ids:
+            if id not in self.finished_agencies:
+                return False
+        return True
+    
+    def _set_agency_as_finished(self, agency: int):
+        self.finished_agencies.add(agency)
