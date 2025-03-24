@@ -104,7 +104,6 @@ func main() {
 	// Print program config with debugging purposes
 	PrintConfig(v)
 
-	// TODO: handle errors
 	betInfo := communication.BetInfo{
 		Agency:      os.Getenv("AGENCIA"),
 		Name:        os.Getenv("NOMBRE"),

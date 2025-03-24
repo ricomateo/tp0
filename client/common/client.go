@@ -89,7 +89,6 @@ func (c *Client) StartClientLoop() {
 			)
 			return
 		}
-		// TODO: check if this log can be removed
 		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
 			c.config.ID,
 			msg,
@@ -107,7 +106,6 @@ func (c *Client) StartClientLoop() {
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
 
-// TODO: consider moving this to the communicationHandler
 func (c *Client) exitGracefully() {
 	log.Info("Shutting down socket connection")
 	err := c.commHandler.Disconnect()
