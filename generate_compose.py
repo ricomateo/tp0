@@ -29,7 +29,7 @@ def generate_compose(base_file, output_file, clients):
             "image": "client:latest",
             "entrypoint": "/client",
             "environment": [
-                "CLI_ID=1",
+                f"CLI_ID={i}",
             ],
             "networks": ["testing_net"],
             "depends_on": ["server"],
