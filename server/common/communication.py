@@ -56,11 +56,10 @@ class CommunicationHandler:
                 return self.__decode_bet_info()
             elif message_type == BET_BATCH_MSG_TYPE:   
                 bets = self.__decode_bet_batch()
+                # TODO: remove this
                 for b in bets:
-                    if b is None:
-                        logging.info("Got None bet??")
-                        continue
-                    logging.info(f"Received bet: agency: {b.agency}, name: {b.first_name}, last_name: {b.last_name}, number: {b.number} etc")
+                    logging.debug(f"Received bet: agency: {b.agency}, name: {b.first_name}, last_name: {b.last_name}, number: {b.number} etc")
+                return bets
         except OSError as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
             raise
@@ -89,7 +88,6 @@ class CommunicationHandler:
 
     def __decode_bet_batch(self) -> list[Bet]:
         batch_size = int.from_bytes(self._client_sock.recv(4), "big")
-        logging.info(f"Batch size = {batch_size}")
         bets = []
         for _ in range(batch_size):
             bet = self.__decode_bet_info()

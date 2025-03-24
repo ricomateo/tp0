@@ -21,11 +21,13 @@ class Server:
         while True:
             try:
                 self.__communication_handler.accept_new_connection()
-                bet = self.__communication_handler.recv_msg()
-                store_bets([bet])
-                logging.info(f"action: apuesta_almacenada | result: success | dni: {bet.document} | numero: {bet.number}")
-                self.__communication_handler.send_bet_confirmation(bet)
-                
+                # TODO: Add error handling
+                bets = self.__communication_handler.recv_msg()
+                store_bets(bets)
+                logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
+                # TODO: change this
+                self.__communication_handler.send_bet_confirmation(bets[0])
+
             except Exception as e:
                 logging.error(f"failed to handle client connection. Error: {e}")
             finally:
