@@ -72,14 +72,17 @@ func (c *CommunicationHandler) Disconnect() error {
 
 // RecvMsg blocks waiting for a message.
 // Returns an error in case of failure
-func (c *CommunicationHandler) RecvMsg() (*BatchConfirmation, error) {
+func (c *CommunicationHandler) RecvMsg() (MessageType, interface{}, error) {
 	msgType := c.recvByte()
-
-	if msgType == BatchConfirmationMsg {
+	switch msgType {
+	case BatchConfirmationMsg:
 		status := c.recvByte()
-		return &BatchConfirmation{Status: status}, nil
+		return msgType, &BatchConfirmation{Status: status}, nil
+	case NoWinnersYetMsg:
+		return msgType, nil, nil
 	}
-	return nil, fmt.Errorf("received invalid message type %d", msgType)
+	err := fmt.Errorf("received invalid message type %d", msgType)
+	return InvalidMsg, nil, err
 }
 
 // recv returns `size` bytes read from the socket

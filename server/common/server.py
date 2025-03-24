@@ -39,6 +39,8 @@ class Server:
                 elif message_type == GET_WINNERS_MSG_TYPE:
                     agency_id = payload
                     logging.info(f"Agency {agency_id} requested the winners")
+                    if not self._all_agencies_finished():
+                        self.__communication_handler.send_no_winners_yet()
                 else:
                     # TODO: raise an error
                     logging.info(f"Invalid message_type = {message_type}")

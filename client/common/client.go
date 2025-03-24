@@ -98,7 +98,7 @@ func (c *Client) StartClientLoop() {
 		}
 
 		// Receive response message
-		msg, err := c.commHandler.RecvMsg()
+		msgType, payload, err := c.commHandler.RecvMsg()
 		if err != nil {
 			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
 				c.config.ID,
@@ -106,14 +106,18 @@ func (c *Client) StartClientLoop() {
 			)
 			return
 		}
-		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
+		log.Infof("action: receive_message | result: success | client_id: %v",
 			c.config.ID,
-			msg,
 		)
-		if msg.Status == comm.Failure {
-			log.Errorf("action: batch_enviado | result: failure")
+		if msgType == comm.BatchConfirmationMsg {
+			msg := payload.(*comm.BatchConfirmation)
+			if msg.Status == comm.Failure {
+				log.Errorf("action: batch_enviado | result: failure")
+			} else {
+				log.Info("action: batch_enviado | result: success")
+			}
 		} else {
-			log.Info("action: batch_enviado | result: success")
+			log.Errorf("Expected batch confirmation message, got %d", msgType)
 		}
 
 		// Wait a time between sending one message and the next one
@@ -142,6 +146,14 @@ func (c *Client) StartClientLoop() {
 	if err != nil {
 		log.Errorf("Failed to send GetWinners msg to the server. Error: %v")
 		return
+	}
+	msgType, _, err := c.commHandler.RecvMsg()
+	if err != nil {
+		log.Errorf("Failed to receive server message. Error: %v")
+		return
+	}
+	if msgType == comm.NoWinnersYetMsg {
+		log.Info("NO WINNERS YET; TRY LATER")
 	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }

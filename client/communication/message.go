@@ -8,6 +8,8 @@ const (
 	BatchConfirmationMsg
 	FinalizationMsg
 	GetWinnersMsg
+	NoWinnersYetMsg
+	InvalidMsg = 255
 )
 
 type BatchStatus = uint8

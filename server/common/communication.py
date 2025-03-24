@@ -10,6 +10,7 @@ BET_BATCH_MSG_TYPE = 0
 BATCH_CONFIRMATION_MSG_TYPE = 1
 FINALIZATION_MSG_TYPE = 2
 GET_WINNERS_MSG_TYPE = 3
+NO_WINNERS_YET_MSG_TYPE = 4
 
 BATCH_FAILURE_STATUS = 0
 BATCH_SUCCESS_STATUS = 1
@@ -74,6 +75,11 @@ class CommunicationHandler:
             raise MessageReceptionError(e)
         except Exception as e:
             raise MessageReceptionError(e)
+
+    def send_no_winners_yet(self):
+        message_type = NO_WINNERS_YET_MSG_TYPE
+        # Send message type
+        self._client_sock.sendall(message_type.to_bytes(1, "big"))
 
     def send_batch_success(self):
         self.__send_batch_status(BATCH_SUCCESS_STATUS)
