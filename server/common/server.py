@@ -28,8 +28,11 @@ class Server:
                 self.__communication_handler.send_batch_success()
 
             except MessageReceptionError as e:
-                logging.error(f"failed to handle client connection. Error: {e}")
                 self.__communication_handler.send_batch_failure()
+
+            except Exception as e:
+                logging.error(f"failed to handle client connection. Error: {e}")
+                
             finally:
                 self.__communication_handler.close_current_connection()
 
