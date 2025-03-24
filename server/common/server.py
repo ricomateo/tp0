@@ -1,10 +1,8 @@
 import logging
-from common.communication import CommunicationHandler
+from common.communication import *
 from common.error import MessageReceptionError
 from common.utils import store_bets
 
-SOCKET_TIMEOUT = 5
-BET_INFO_MSG_TYPE = 0
 
 class Server:
     def __init__(self, port, listen_backlog):
@@ -22,12 +20,20 @@ class Server:
         while True:
             try:
                 self.__communication_handler.accept_new_connection()
-                bets = self.__communication_handler.recv_msg()
-                store_bets(bets)
-                logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
-                self.__communication_handler.send_batch_success()
+                # TODO: consider creating a Message class
+                message_type, payload = self.__communication_handler.recv_msg()
+                if message_type == BATCH_CONFIRMATION_MSG_TYPE:
+                    bets = payload
+                    store_bets(bets)
+                    logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
+                    self.__communication_handler.send_batch_success()
+
+                elif message_type == FINALIZATION_MSG_TYPE:
+                    agency_id = payload
+                    logging.info(f"Agency with id {agency_id} finished!!!")
 
             except MessageReceptionError as e:
+                # if message_type == BATCH_CONFIRMATION_MSG_TYPE:
                 self.__communication_handler.send_batch_failure()
 
             except Exception as e:

@@ -8,6 +8,7 @@ from common.error import MessageReceptionError
 SOCKET_TIMEOUT = 5
 BET_BATCH_MSG_TYPE = 0
 BATCH_CONFIRMATION_MSG_TYPE = 1
+FINALIZATION_MSG_TYPE = 2
 
 BATCH_FAILURE_STATUS = 0
 BATCH_SUCCESS_STATUS = 1
@@ -57,7 +58,11 @@ class CommunicationHandler:
             message_type = int.from_bytes(self._client_sock.recv(1), "big")
             if message_type == BET_BATCH_MSG_TYPE:   
                 bets = self.__decode_bet_batch()
-                return bets
+                return message_type, bets
+            elif message_type == FINALIZATION_MSG_TYPE:
+                agency_id = self.__decode_finalization_msg()
+                return message_type, agency_id
+
             else:
                 raise MessageReceptionError("Invalid message type")
         
@@ -84,6 +89,10 @@ class CommunicationHandler:
             bets.append(bet)
         return bets
     
+    def __decode_finalization_msg(self) -> int:
+        agency_id = str(self._client_sock.recv(1), 'utf-8')
+        return int(agency_id)
+
     def __send_batch_status(self, status: int):
         message_type = BATCH_CONFIRMATION_MSG_TYPE
         # Send message type
