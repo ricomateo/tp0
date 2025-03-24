@@ -90,7 +90,7 @@ class CommunicationHandler:
         return bets
     
     def __decode_finalization_msg(self) -> int:
-        agency_id = str(self._client_sock.recv(1), 'utf-8')
+        agency_id = self.__recv_str()
         return int(agency_id)
 
     def __send_batch_status(self, status: int):
