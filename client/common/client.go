@@ -57,52 +57,46 @@ func (c *Client) StartClientLoop() {
 			c.mutex.Unlock()
 		}
 	}()
-	// There is an autoincremental msgID to identify every message sent
-	// Messages if the message amount threshold has not been surpassed
-	for msgID := 1; msgID <= c.config.LoopAmount; msgID++ {
-		// Create the connection the server in every loop iteration. Send an
-		c.commHandler.Connect(c.config.ServerAddress)
 
-		// Atomically read the SIGTERM flag
-		c.mutex.Lock()
-		receivedSigTerm := c.receivedSigTerm
-		c.mutex.Unlock()
+	// Create the connection the server in every loop iteration. Send an
+	c.commHandler.Connect(c.config.ServerAddress)
 
-		// Exit in case of having received a SIGTERM signal
-		if receivedSigTerm {
-			c.exitGracefully()
-		}
+	// Atomically read the SIGTERM flag
+	c.mutex.Lock()
+	receivedSigTerm := c.receivedSigTerm
+	c.mutex.Unlock()
 
-		// Send the storeBet message
-		storeBetMsg := comm.StoreBetMessage(c.config.BetInfo)
-		err := c.commHandler.Send(storeBetMsg)
-		if err != nil {
-			log.Errorf("Failed to send bet message. Error: %s", err)
-		}
-
-		// Receive response message
-		msg, err := c.commHandler.RecvMsg()
-		if err != nil {
-			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
-				c.config.ID,
-				err,
-			)
-			return
-		}
-		log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
-			c.config.ID,
-			msg,
-		)
-		if msg.MessageType == comm.ConfirmedBetMsg {
-			msg := msg.Payload.(comm.ConfirmedBet)
-			log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v", msg.Document, msg.Number)
-		}
-
-		c.commHandler.Disconnect()
-
-		// Wait a time between sending one message and the next one
-		time.Sleep(c.config.LoopPeriod)
+	// Exit in case of having received a SIGTERM signal
+	if receivedSigTerm {
+		c.exitGracefully()
 	}
+
+	// Send the storeBet message
+	storeBetMsg := comm.StoreBetMessage(c.config.BetInfo)
+	err := c.commHandler.Send(storeBetMsg)
+	if err != nil {
+		log.Errorf("Failed to send bet message. Error: %s", err)
+	}
+
+	// Receive response message
+	msg, err := c.commHandler.RecvMsg()
+	if err != nil {
+		log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
+			c.config.ID,
+			err,
+		)
+		return
+	}
+	log.Infof("action: receive_message | result: success | client_id: %v | msg: %v",
+		c.config.ID,
+		msg,
+	)
+	if msg.MessageType == comm.ConfirmedBetMsg {
+		msg := msg.Payload.(comm.ConfirmedBet)
+		log.Infof("action: apuesta_enviada | result: success | dni: %v | numero: %v", msg.Document, msg.Number)
+	}
+
+	c.commHandler.Disconnect()
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
 
