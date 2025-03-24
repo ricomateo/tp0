@@ -31,7 +31,9 @@ class Server:
                 elif message_type == FINALIZATION_MSG_TYPE:
                     agency_id = payload
                     logging.info(f"Agency with id {agency_id} finished!!!")
-
+                else:
+                    # TODO: raise an error
+                    logging.info(f"Invalid message_type = {message_type}")
             except MessageReceptionError as e:
                 self.__communication_handler.send_batch_failure()
 
