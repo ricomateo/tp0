@@ -66,6 +66,7 @@ func (c *Client) StartClientLoop() {
 		log.Errorf("Failed to open agency file: %v", err)
 		return
 	}
+	defer file.Close()
 
 	fileScanner := bufio.NewScanner(file)
 	// Scan() returns false when it gets to the end of the file
@@ -141,7 +142,6 @@ func (c *Client) getBatch(fileScanner *bufio.Scanner) []comm.BetInfo {
 			DateOfBirth: birthdate,
 			Number:      number,
 		}
-		log.Info("Parsed bet: %v", bet)
 		bets = append(bets, bet)
 		// if Scan() return false it means there is no more data to read
 		if !fileScanner.Scan() {
