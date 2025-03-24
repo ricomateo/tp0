@@ -5,9 +5,11 @@ import sys
 from common.utils import Bet
 
 SOCKET_TIMEOUT = 5
-BET_INFO_MSG_TYPE = 0
-BET_CONFIRMATION_MSG_TYPE = 1
-BET_BATCH_MSG_TYPE = 2
+BET_BATCH_MSG_TYPE = 0
+BATCH_CONFIRMATION_MSG_TYPE = 1
+
+BATCH_FAILURE_STATUS = 0
+BATCH_SUCCESS_STATUS = 1
 
 class CommunicationHandler:
     def __init__(self, port, listen_backlog):
@@ -52,36 +54,23 @@ class CommunicationHandler:
         """
         try:
             message_type = int.from_bytes(self._client_sock.recv(1), "big")
-            if message_type == BET_INFO_MSG_TYPE:
-                return self.__decode_bet_info()
-            elif message_type == BET_BATCH_MSG_TYPE:   
+            if message_type == BET_BATCH_MSG_TYPE:   
                 bets = self.__decode_bet_batch()
                 # TODO: remove this
                 for b in bets:
                     logging.debug(f"Received bet: agency: {b.agency}, name: {b.first_name}, last_name: {b.last_name}, number: {b.number} etc")
                 return bets
+            else:
+                raise Exception("Invalid message type")
         except OSError as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
             raise
 
-    def send_bet_confirmation(self, bet: Bet):
-        """
-        Sends a confirmation message for the given bet to the current socket connection.
-        """
-        message_type = BET_CONFIRMATION_MSG_TYPE
-        document = str(bet.document).encode('utf-8')
-        number = str(bet.number).encode('utf-8')
-    
-        # Send message type
-        self._client_sock.sendall(message_type.to_bytes(1, "big"))
-        # Send document's length and value
-        self._client_sock.sendall(len(document).to_bytes(1, "big"))
-        self._client_sock.sendall(document)
-        
-        # Send number's length and value
-        self._client_sock.sendall(len(number).to_bytes(1, "big"))
-        self._client_sock.sendall(number)
-        self._client_sock.sendall(b"\n")
+    def send_batch_success(self):
+        self.__send_batch_status(BATCH_SUCCESS_STATUS)
+
+    def send_batch_failure(self):
+        self.__send_batch_status(BATCH_FAILURE_STATUS)
 
     def close_current_connection(self):
         self._client_sock.close()
@@ -93,6 +82,13 @@ class CommunicationHandler:
             bet = self.__decode_bet_info()
             bets.append(bet)
         return bets
+    
+    def __send_batch_status(self, status: int):
+        message_type = BATCH_CONFIRMATION_MSG_TYPE
+        # Send message type
+        self._client_sock.sendall(message_type.to_bytes(1, "big"))
+        # Send status
+        self._client_sock.sendall(status.to_bytes(1, "big"))
 
     def __decode_bet_info(self) -> Bet:
         """

@@ -25,8 +25,8 @@ class Server:
                 bets = self.__communication_handler.recv_msg()
                 store_bets(bets)
                 logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
-                # TODO: change this
-                self.__communication_handler.send_bet_confirmation(bets[0])
+                # TODO: send error message in case the batch fails
+                self.__communication_handler.send_batch_success()
 
             except Exception as e:
                 logging.error(f"failed to handle client connection. Error: {e}")
