@@ -25,6 +25,17 @@ func serializeBets(bets []BetInfo) []byte {
 	return serializedMsg
 }
 
+func serializeFinalizationMsg(agencyId string) []byte {
+	messageType := byte(FinalizationMsg)
+	serializedMsg := make([]byte, 0)
+	serializedMsg = append(serializedMsg, messageType)
+
+	// Serialize the batch size
+	serializedMsg = serializeField(serializedMsg, agencyId)
+
+	return serializedMsg
+}
+
 // serializeField serializes a string field and appends it to the given buffer
 func serializeField(buf []byte, field string) []byte {
 	fieldLength := byte(len(field))

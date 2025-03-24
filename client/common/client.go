@@ -68,6 +68,8 @@ func (c *Client) StartClientLoop() {
 			c.mutex.Unlock()
 		}
 	}()
+	// Wait for server startup
+	time.Sleep(1 * time.Second)
 
 	// Loop until the batcher finishes reading the agency file
 	for !c.batcher.Finished {
@@ -118,6 +120,12 @@ func (c *Client) StartClientLoop() {
 		time.Sleep(c.config.LoopPeriod)
 		c.commHandler.Disconnect()
 	}
+	err := c.commHandler.Connect(c.config.ServerAddress)
+	if err != nil {
+		log.Errorf("Failed to connect to the server. Error: %v")
+		return
+	}
+	err = c.commHandler.SendFinalizationMsg()
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
 

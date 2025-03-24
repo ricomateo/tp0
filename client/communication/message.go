@@ -6,6 +6,7 @@ type MessageType = uint8
 const (
 	StoreBetBatchMsg MessageType = iota
 	BatchConfirmationMsg
+	FinalizationMsg
 )
 
 type BatchStatus = uint8

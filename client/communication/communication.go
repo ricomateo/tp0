@@ -42,6 +42,17 @@ func (c *CommunicationHandler) SendBatch(bets []BetInfo) error {
 	return nil
 }
 
+// Send sends the given message through the current socket connection.
+// In case of failure returns an error
+func (c *CommunicationHandler) SendFinalizationMsg() error {
+	serializedMsg := serializeFinalizationMsg(c.ID)
+	_, err := c.conn.Write(serializedMsg)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Disconnect closes the current socket connection.
 // Returns an error in case of failure
 func (c *CommunicationHandler) Disconnect() error {
