@@ -1,12 +1,9 @@
-# id: 1
 server:
   address: "server:12345"
 loop:
-  amount: 5
+  amount: 500
   period: "10ms"
 log:
   level: "INFO"
 batch:
   maxAmount: 130
-file:
-  agency: /agency.csv

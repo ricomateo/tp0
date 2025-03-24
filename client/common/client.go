@@ -13,6 +13,8 @@ import (
 
 var log = logging.MustGetLogger("log")
 
+const AGENCY_FILE = "/agency.csv"
+
 // ClientConfig Configuration used by the client
 type ClientConfig struct {
 	ID            string
@@ -20,7 +22,6 @@ type ClientConfig struct {
 	LoopAmount    int
 	LoopPeriod    time.Duration
 	BatchSize     int
-	AgencyFile    string
 }
 
 // Client Entity that encapsulates how
@@ -35,8 +36,7 @@ type Client struct {
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
 func NewClient(config ClientConfig) (*Client, error) {
-
-	batcher, err := NewBatcher(config.AgencyFile, config.BatchSize, config.ID)
+	batcher, err := NewBatcher(AGENCY_FILE, config.BatchSize, config.ID)
 	if err != nil {
 		log.Errorf("Failed to create batcher. Error: %v", err)
 		return nil, err
