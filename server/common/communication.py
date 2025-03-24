@@ -3,6 +3,7 @@ import signal
 import logging
 import sys
 from common.utils import Bet
+from common.error import MessageReceptionError
 
 SOCKET_TIMEOUT = 5
 BET_BATCH_MSG_TYPE = 0
@@ -56,15 +57,15 @@ class CommunicationHandler:
             message_type = int.from_bytes(self._client_sock.recv(1), "big")
             if message_type == BET_BATCH_MSG_TYPE:   
                 bets = self.__decode_bet_batch()
-                # TODO: remove this
-                for b in bets:
-                    logging.debug(f"Received bet: agency: {b.agency}, name: {b.first_name}, last_name: {b.last_name}, number: {b.number} etc")
                 return bets
             else:
-                raise Exception("Invalid message type")
+                raise MessageReceptionError("Invalid message type")
+        
         except OSError as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
-            raise
+            raise MessageReceptionError(e)
+        except Exception as e:
+            raise MessageReceptionError(e)
 
     def send_batch_success(self):
         self.__send_batch_status(BATCH_SUCCESS_STATUS)

@@ -1,5 +1,6 @@
 import logging
 from common.communication import CommunicationHandler
+from common.error import MessageReceptionError
 from common.utils import store_bets
 
 SOCKET_TIMEOUT = 5
@@ -21,15 +22,14 @@ class Server:
         while True:
             try:
                 self.__communication_handler.accept_new_connection()
-                # TODO: Add error handling
                 bets = self.__communication_handler.recv_msg()
                 store_bets(bets)
                 logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
-                # TODO: send error message in case the batch fails
                 self.__communication_handler.send_batch_success()
 
-            except Exception as e:
+            except MessageReceptionError as e:
                 logging.error(f"failed to handle client connection. Error: {e}")
+                self.__communication_handler.send_batch_failure()
             finally:
                 self.__communication_handler.close_current_connection()
 
