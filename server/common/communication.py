@@ -103,7 +103,6 @@ class CommunicationHandler:
         birthdate = self.__recv_str()
         number = self.__recv_str()
         
-        logging.debug(f"Message data: agency: {agency} name: {name}, last_name: {last_name}, document: {document}, birthdate: {birthdate}, number: {number}")
         return Bet(agency, name, last_name, str(document), birthdate, str(number))
     
     def __recv_str(self) -> str:
