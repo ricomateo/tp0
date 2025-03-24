@@ -35,6 +35,10 @@ class Server:
                     if self._all_agencies_finished():
                         logging.info(f"All agencies finished!")
                         self._load_winners()
+
+                elif message_type == GET_WINNERS_MSG_TYPE:
+                    agency_id = payload
+                    logging.info(f"Agency {agency_id} requested the winners")
                 else:
                     # TODO: raise an error
                     logging.info(f"Invalid message_type = {message_type}")

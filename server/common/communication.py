@@ -9,6 +9,7 @@ SOCKET_TIMEOUT = 5
 BET_BATCH_MSG_TYPE = 0
 BATCH_CONFIRMATION_MSG_TYPE = 1
 FINALIZATION_MSG_TYPE = 2
+GET_WINNERS_MSG_TYPE = 3
 
 BATCH_FAILURE_STATUS = 0
 BATCH_SUCCESS_STATUS = 1
@@ -62,7 +63,9 @@ class CommunicationHandler:
             elif message_type == FINALIZATION_MSG_TYPE:
                 agency_id = self.__decode_finalization_msg()
                 return message_type, agency_id
-
+            elif message_type == GET_WINNERS_MSG_TYPE:
+                agency_id = self.__decode_get_winners_msg()
+                return message_type, agency_id
             else:
                 raise MessageReceptionError("Invalid message type")
         
@@ -88,7 +91,11 @@ class CommunicationHandler:
             bet = self.__decode_bet_info()
             bets.append(bet)
         return bets
-    
+
+    def __decode_get_winners_msg(self) -> int:
+        agency_id = self.__recv_str()
+        return int(agency_id)
+
     def __decode_finalization_msg(self) -> int:
         agency_id = self.__recv_str()
         return int(agency_id)
