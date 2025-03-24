@@ -74,8 +74,13 @@ func (c *Client) StartClientLoop() {
 		}
 
 		// Send the storeBet message
-		storeBetMsg := comm.StoreBetMessage(c.config.BetInfo)
-		err := c.commHandler.Send(storeBetMsg)
+		bet2 := c.config.BetInfo
+		bet2.Name = "Mario"
+		bet3 := c.config.BetInfo
+		bet3.Name = "Arnaldo"
+		bets := []comm.BetInfo{c.config.BetInfo, bet2, bet3}
+		storeBetBatchMsg := comm.StoreBetBatchMessage(bets)
+		err := c.commHandler.Send(storeBetBatchMsg)
 		if err != nil {
 			log.Errorf("Failed to send bet message. Error: %s", err)
 		}

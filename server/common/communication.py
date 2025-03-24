@@ -7,6 +7,7 @@ from common.utils import Bet
 SOCKET_TIMEOUT = 5
 BET_INFO_MSG_TYPE = 0
 BET_CONFIRMATION_MSG_TYPE = 1
+BET_BATCH_MSG_TYPE = 2
 
 class CommunicationHandler:
     def __init__(self, port, listen_backlog):
@@ -53,7 +54,13 @@ class CommunicationHandler:
             message_type = int.from_bytes(self._client_sock.recv(1), "big")
             if message_type == BET_INFO_MSG_TYPE:
                 return self.__decode_bet_info()
-
+            elif message_type == BET_BATCH_MSG_TYPE:   
+                bets = self.__decode_bet_batch()
+                for b in bets:
+                    if b is None:
+                        logging.info("Got None bet??")
+                        continue
+                    logging.info(f"Received bet: agency: {b.agency}, name: {b.first_name}, last_name: {b.last_name}, number: {b.number} etc")
         except OSError as e:
             logging.error(f"action: receive_message | result: fail | error: {e}")
             raise
@@ -79,6 +86,15 @@ class CommunicationHandler:
 
     def close_current_connection(self):
         self._client_sock.close()
+
+    def __decode_bet_batch(self) -> list[Bet]:
+        batch_size = int.from_bytes(self._client_sock.recv(4), "big")
+        logging.info(f"Batch size = {batch_size}")
+        bets = []
+        for _ in range(batch_size):
+            bet = self.__decode_bet_info()
+            bets.append(bet)
+        return bets
 
     def __decode_bet_info(self) -> Bet:
         """
