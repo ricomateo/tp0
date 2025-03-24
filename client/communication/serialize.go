@@ -25,12 +25,23 @@ func serializeBets(bets []BetInfo) []byte {
 	return serializedMsg
 }
 
+func serializeGetWinnersMsg(agencyId string) []byte {
+	messageType := byte(GetWinnersMsg)
+	serializedMsg := make([]byte, 0)
+	serializedMsg = append(serializedMsg, messageType)
+
+	// Serialize the agency id
+	serializedMsg = serializeField(serializedMsg, agencyId)
+
+	return serializedMsg
+}
+
 func serializeFinalizationMsg(agencyId string) []byte {
 	messageType := byte(FinalizationMsg)
 	serializedMsg := make([]byte, 0)
 	serializedMsg = append(serializedMsg, messageType)
 
-	// Serialize the batch size
+	// Serialize the agency id
 	serializedMsg = serializeField(serializedMsg, agencyId)
 
 	return serializedMsg

@@ -125,7 +125,24 @@ func (c *Client) StartClientLoop() {
 		log.Errorf("Failed to connect to the server. Error: %v")
 		return
 	}
+
+	// TODO: move the connection step to the send function
 	err = c.commHandler.SendFinalizationMsg()
+	if err != nil {
+		log.Errorf("Failed to send finalization msg to the server. Error: %v")
+		return
+	}
+	c.commHandler.Disconnect()
+	err = c.commHandler.Connect(c.config.ServerAddress)
+	if err != nil {
+		log.Errorf("Failed to connect to the server. Error: %v")
+		return
+	}
+	err = c.commHandler.SendGetWinnersMsg()
+	if err != nil {
+		log.Errorf("Failed to send GetWinners msg to the server. Error: %v")
+		return
+	}
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
 
