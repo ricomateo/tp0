@@ -1,13 +1,14 @@
 import logging
 from common.communication import *
 from common.error import MessageReceptionError
-from common.utils import store_bets
+from common.utils import *
 
 
 class Server:
     def __init__(self, port, listen_backlog):
         self.__communication_handler = CommunicationHandler(port, listen_backlog)
         self.finished_agencies = set()
+        self.winners_by_agency = {}
 
     def run(self):
         """
@@ -33,6 +34,7 @@ class Server:
                     self._set_agency_as_finished(agency_id)
                     if self._all_agencies_finished():
                         logging.info(f"All agencies finished!")
+                        self._load_winners()
                 else:
                     # TODO: raise an error
                     logging.info(f"Invalid message_type = {message_type}")
@@ -54,3 +56,9 @@ class Server:
     
     def _set_agency_as_finished(self, agency: int):
         self.finished_agencies.add(agency)
+
+    def _load_winners(self):
+        bets = load_bets()
+        for bet in bets:
+            if has_won(bet):
+                self.winners_by_agency.setdefault(bet.agency, []).append(bet.document)
