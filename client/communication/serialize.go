@@ -12,7 +12,7 @@ func (m *Message) serialize() []byte {
 
 // serialize serializes the BetInfo payload
 func (b *BetInfo) serialize() []byte {
-	messageType := byte(0)
+	messageType := byte(StoreBetMsg)
 	serializedMsg := make([]byte, 0)
 	serializedMsg = append(serializedMsg, messageType)
 
