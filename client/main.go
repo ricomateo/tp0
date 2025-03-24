@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/common"
-	"github.com/7574-sistemas-distribuidos/docker-compose-init/client/communication"
 )
 
 var log = logging.MustGetLogger("log")
@@ -106,24 +105,18 @@ func main() {
 	// Print program config with debugging purposes
 	PrintConfig(v)
 
-	betInfo := communication.BetInfo{
-		Agency:      os.Getenv("AGENCIA"),
-		Name:        os.Getenv("NOMBRE"),
-		LastName:    os.Getenv("APELLIDO"),
-		Document:    os.Getenv("DOCUMENTO"),
-		DateOfBirth: os.Getenv("NACIMIENTO"),
-		Number:      os.Getenv("NUMERO"),
-	}
-
 	clientConfig := common.ClientConfig{
 		ServerAddress: v.GetString("server.address"),
 		ID:            v.GetString("id"),
 		LoopAmount:    v.GetInt("loop.amount"),
 		LoopPeriod:    v.GetDuration("loop.period"),
 		BatchSize:     v.GetInt("batch.maxAmount"),
-		BetInfo:       betInfo,
 	}
 
-	client := common.NewClient(clientConfig)
+	client, err := common.NewClient(clientConfig)
+	if err != nil {
+		log.Errorf("Failed to create client. Error: %v", err)
+		return
+	}
 	client.StartClientLoop()
 }

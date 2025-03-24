@@ -1,10 +1,8 @@
 package common
 
 import (
-	"bufio"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -21,7 +19,6 @@ type ClientConfig struct {
 	ServerAddress string
 	LoopAmount    int
 	LoopPeriod    time.Duration
-	BetInfo       comm.BetInfo
 	BatchSize     int
 }
 
@@ -31,19 +28,28 @@ type Client struct {
 	commHandler     comm.CommunicationHandler
 	mutex           sync.Mutex
 	receivedSigTerm bool
+	batcher         *Batcher
 }
 
 // NewClient Initializes a new client receiving the configuration
 // as a parameter
-func NewClient(config ClientConfig) *Client {
+func NewClient(config ClientConfig) (*Client, error) {
+	// TODO: read the agency filename from config
+	agencyFile := "/agency.csv"
+	batcher, err := NewBatcher(agencyFile, config.BatchSize, config.ID)
+	if err != nil {
+		log.Errorf("Failed to create batcher. Error: %v", err)
+		return nil, err
+	}
 	client := &Client{
 		config:          config,
 		receivedSigTerm: false,
 		commHandler: comm.CommunicationHandler{
 			ID: config.ID,
 		},
+		batcher: batcher,
 	}
-	return client
+	return client, nil
 }
 
 // StartClientLoop Send messages to the client until some time threshold is met
@@ -61,16 +67,7 @@ func (c *Client) StartClientLoop() {
 		}
 	}()
 
-	file, err := os.Open("/agency.csv")
-	if err != nil {
-		log.Errorf("Failed to open agency file: %v", err)
-		return
-	}
-	defer file.Close()
-
-	fileScanner := bufio.NewScanner(file)
-	// Scan() returns false when it gets to the end of the file
-	for fileScanner.Scan() {
+	for !c.batcher.Finished {
 		err := c.commHandler.Connect(c.config.ServerAddress)
 		if err != nil {
 			log.Errorf("Failed to connect to the server. Error: %v", err)
@@ -87,7 +84,8 @@ func (c *Client) StartClientLoop() {
 		}
 
 		// Get the next batch of bets
-		batch := c.getBatch(fileScanner)
+		batch := c.batcher.GetBatch()
+
 		// Send the batch
 		err = c.commHandler.SendBatch(batch)
 		if err != nil {
@@ -120,42 +118,16 @@ func (c *Client) StartClientLoop() {
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
 
-func (c *Client) getBatch(fileScanner *bufio.Scanner) []comm.BetInfo {
-	bets := []comm.BetInfo{}
-	for i := 0; i < c.config.BatchSize; i++ {
-		line := fileScanner.Text()
-		fields := strings.Split(line, ",")
-		if len(fields) < 5 {
-			log.Error("Failed to parse bet record. Error: missing fields")
-			continue
-		}
-		name := fields[0]
-		lastName := fields[1]
-		document := fields[2]
-		birthdate := fields[3]
-		number := fields[4]
-		bet := comm.BetInfo{
-			Agency:      c.config.ID,
-			Name:        name,
-			LastName:    lastName,
-			Document:    document,
-			DateOfBirth: birthdate,
-			Number:      number,
-		}
-		bets = append(bets, bet)
-		// if Scan() return false it means there is no more data to read
-		if !fileScanner.Scan() {
-			break
-		}
-	}
-	return bets
-}
-
 func (c *Client) exitGracefully() {
-	log.Info("Shutting down socket connection")
+	log.Info("Shutting down the client")
 	err := c.commHandler.Disconnect()
 	if err != nil {
 		log.Error("Failed to close connection. Error: ", err)
+		os.Exit(1)
+	}
+	err = c.batcher.Stop()
+	if err != nil {
+		log.Error("Failed to stop the batcher. Error: ", err)
 		os.Exit(1)
 	}
 	log.Info("Client exited gracefully")
