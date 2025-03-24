@@ -13,6 +13,8 @@ import (
 
 var log = logging.MustGetLogger("log")
 
+// This is hardcoded here so that the tests work
+// (the tests override the config.yaml)
 const AGENCY_FILE = "/agency.csv"
 
 // ClientConfig Configuration used by the client
@@ -67,6 +69,7 @@ func (c *Client) StartClientLoop() {
 		}
 	}()
 
+	// Loop until the batcher finishes reading the agency file
 	for !c.batcher.Finished {
 		err := c.commHandler.Connect(c.config.ServerAddress)
 		if err != nil {
