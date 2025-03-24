@@ -46,11 +46,18 @@ def generate_compose(base_file, output_file, clients):
             ],
             "networks": ["testing_net"],
             "depends_on": ["server"],
-            "volumes": [{
-                "type": "bind",
-                "source": "./client/config.yaml",
-                "target": "/config.yaml"
-            }]
+            "volumes": [
+                {
+                    "type": "bind",
+                    "source": "./client/config.yaml",
+                    "target": "/config.yaml"
+                },
+                {
+                    "type": "bind",
+                    "source": f"./.data/agency-{i}.csv",
+                    "target": "/agency.csv"
+                },
+            ]
         }
 
     # Save the new compose file
