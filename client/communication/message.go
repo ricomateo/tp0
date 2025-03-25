@@ -34,7 +34,7 @@ type BatchConfirmation struct {
 	Status BatchStatus
 }
 
-type Winners struct {
-	Length  uint8 // TODO: remove this field
-	Winners []string
+type GetWinnersResponse struct {
+	MessageType MessageType
+	Payload     interface{}
 }

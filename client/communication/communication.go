@@ -93,6 +93,27 @@ func (c *CommunicationHandler) SendGetWinnersMsg() error {
 	return nil
 }
 
+func (c *CommunicationHandler) GetWinners() (*GetWinnersResponse, error) {
+	err := c.Connect(c.ServerAddress)
+	defer c.Disconnect()
+	if err != nil {
+		return nil, err
+	}
+	err = c.SendGetWinnersMsg()
+	if err != nil {
+		return nil, fmt.Errorf("failed to send get_winners message. Error: %s", err)
+	}
+	msgType, payload, err := c.RecvMsg()
+	if err != nil {
+		return nil, fmt.Errorf("failed to receive server message. Error: %s", err)
+	}
+	response := GetWinnersResponse{
+		MessageType: msgType,
+		Payload:     payload,
+	}
+	return &response, nil
+}
+
 // Disconnect closes the current socket connection.
 // Returns an error in case of failure
 func (c *CommunicationHandler) Disconnect() error {

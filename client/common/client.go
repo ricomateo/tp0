@@ -107,32 +107,23 @@ func (c *Client) StartClientLoop() {
 	log.Info("action: finalization_enviado | result: success")
 
 	for {
-		err = c.commHandler.Connect(c.config.ServerAddress)
+		response, err := c.commHandler.GetWinners()
 		if err != nil {
-			log.Errorf("Failed to connect to the server. Error: %v")
+			log.Errorf("Failed to get winners. Error: %s", err)
 			return
 		}
-		err = c.commHandler.SendGetWinnersMsg()
-		if err != nil {
-			log.Errorf("action: get_winners_enviado | result: failure | error: %v", err)
-			return
-		}
-		log.Info("action: get_winners_enviado | result: success")
-		msgType, payload, err := c.commHandler.RecvMsg()
-		if err != nil {
-			log.Errorf("Failed to receive server message. Error: %v")
-			return
-		}
-		c.commHandler.Disconnect()
-		if msgType == comm.WinnersMsg {
-			winners := payload.([]string)
-			log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %d", len(winners))
-			break
-		}
-		if msgType == comm.NoWinnersYetMsg {
+		// If there are no winners yet, sleep some time and then request the winners again
+		if response.MessageType == comm.NoWinnersYetMsg {
 			time.Sleep(1 * time.Second)
 			continue
 		}
+		// If the server responds with the winners, break
+		if response.MessageType == comm.WinnersMsg {
+			winners := response.Payload.([]string)
+			log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %d", len(winners))
+			break
+		}
+
 	}
 
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
