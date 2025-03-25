@@ -98,23 +98,13 @@ func (c *Client) StartClientLoop() {
 
 		// Wait a time between sending one message and the next one
 		time.Sleep(c.config.LoopPeriod)
-		c.commHandler.Disconnect()
 	}
-	err := c.commHandler.Connect(c.config.ServerAddress)
-	if err != nil {
-		log.Errorf("Failed to connect to the server. Error: %v")
-		return
-	}
-
-	// TODO: move the connection step to the send function
-	err = c.commHandler.SendFinalizationMsg()
+	err := c.commHandler.SendFinalizationMsg()
 	if err != nil {
 		log.Error("action: finalization_enviado | result: failure")
 		return
 	}
 	log.Info("action: finalization_enviado | result: success")
-
-	c.commHandler.Disconnect()
 
 	for {
 		err = c.commHandler.Connect(c.config.ServerAddress)
