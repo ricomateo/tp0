@@ -164,7 +164,6 @@ func (c *Client) StartClientLoop() {
 			break
 		}
 		if msgType == comm.NoWinnersYetMsg {
-			log.Infof("action: consulta_ganadores | result: failure (no winners yet)")
 			time.Sleep(1 * time.Second)
 			continue
 		}
