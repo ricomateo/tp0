@@ -48,7 +48,7 @@ func (c *CommunicationHandler) SendBatch(bets []BetInfo) error {
 		return fmt.Errorf("failed to send the message to the server. Error: %s", err)
 	}
 	// Receive the response
-	msgType, payload, err := c.RecvMsg()
+	msgType, payload, err := c.recvMsg()
 	if err != nil {
 		return err
 	}
@@ -82,28 +82,21 @@ func (c *CommunicationHandler) SendFinalizationMsg() error {
 	return nil
 }
 
-// Send sends the given message through the current socket connection.
+// GetWinnersMsg sends the given message through the current socket connection,
+// and returns the response received from the server.
 // In case of failure returns an error
-func (c *CommunicationHandler) SendGetWinnersMsg() error {
-	serializedMsg := serializeGetWinnersMsg(c.ID)
-	_, err := c.conn.Write(serializedMsg)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (c *CommunicationHandler) GetWinners() (*GetWinnersResponse, error) {
 	err := c.Connect(c.ServerAddress)
 	defer c.Disconnect()
 	if err != nil {
 		return nil, err
 	}
-	err = c.SendGetWinnersMsg()
+	serializedMsg := serializeGetWinnersMsg(c.ID)
+	_, err = c.conn.Write(serializedMsg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to send get_winners message. Error: %s", err)
+		return nil, err
 	}
-	msgType, payload, err := c.RecvMsg()
+	msgType, payload, err := c.recvMsg()
 	if err != nil {
 		return nil, fmt.Errorf("failed to receive server message. Error: %s", err)
 	}
@@ -122,7 +115,7 @@ func (c *CommunicationHandler) Disconnect() error {
 
 // RecvMsg blocks waiting for a message.
 // Returns an error in case of failure
-func (c *CommunicationHandler) RecvMsg() (MessageType, interface{}, error) {
+func (c *CommunicationHandler) recvMsg() (MessageType, interface{}, error) {
 	msgType := c.recvByte()
 	switch msgType {
 	case BatchConfirmationMsg:
