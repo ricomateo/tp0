@@ -10,8 +10,8 @@ def generate_compose(base_file, output_file, clients):
         "source": "./server/config.ini",
         "target": "/config.ini"
     }]
-    # Empty up the server environment
-    del compose["services"]["server"]["environment"]
+    # Set the number of clients in the server
+    compose["services"]["server"]["environment"] = [f"CLIENTS={clients}"]
     
     # Collect the clients to delete
     clients_to_delete = []

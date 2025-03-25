@@ -5,10 +5,11 @@ from common.utils import *
 
 
 class Server:
-    def __init__(self, port, listen_backlog):
+    def __init__(self, port, listen_backlog, number_of_clients):
         self.__communication_handler = CommunicationHandler(port, listen_backlog)
         self.finished_agencies = set()
         self.winners_by_agency = {}
+        self.number_of_clients = number_of_clients
 
     def run(self):
         """
@@ -56,7 +57,7 @@ class Server:
                 self.__communication_handler.close_current_connection()
 
     def _all_agencies_finished(self) -> bool:
-        agencies_ids = list(range(1, 6))
+        agencies_ids = list(range(1, self.number_of_clients + 1))
         for id in agencies_ids:
             if id not in self.finished_agencies:
                 return False
