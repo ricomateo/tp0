@@ -9,7 +9,7 @@ class Server:
         self.__communication_handler = CommunicationHandler(port, listen_backlog)
         self.finished_agencies = set()
         self.winners_by_agency = {}
-        self.number_of_clients = number_of_clients
+        self.number_of_clients = int(number_of_clients)
 
     def run(self):
         """
