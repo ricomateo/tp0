@@ -99,6 +99,7 @@ func (c *Client) StartClientLoop() {
 		// Wait a time between sending one message and the next one
 		time.Sleep(c.config.LoopPeriod)
 	}
+
 	err := c.commHandler.SendFinalizationMsg()
 	if err != nil {
 		log.Error("action: finalization_enviado | result: failure")
@@ -106,11 +107,21 @@ func (c *Client) StartClientLoop() {
 	}
 	log.Info("action: finalization_enviado | result: success")
 
+	betWinners, err := c.requestWinners()
+	if err != nil {
+		log.Errorf("action: consulta_ganadores | result: failure | error: %s", err)
+		return
+	}
+	log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %d", len(betWinners))
+}
+
+// requestWinners loops requesting the winners to the server, until it responds with the winners
+// It sleeps for a second between requests
+func (c *Client) requestWinners() ([]string, error) {
 	for {
 		response, err := c.commHandler.GetWinners()
 		if err != nil {
-			log.Errorf("Failed to get winners. Error: %s", err)
-			return
+			return nil, err
 		}
 		// If there are no winners yet, sleep some time and then request the winners again
 		if response.MessageType == comm.NoWinnersYetMsg {
@@ -120,13 +131,9 @@ func (c *Client) StartClientLoop() {
 		// If the server responds with the winners, break
 		if response.MessageType == comm.WinnersMsg {
 			winners := response.Payload.([]string)
-			log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %d", len(winners))
-			break
+			return winners, nil
 		}
-
 	}
-
-	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
 
 func (c *Client) exitGracefully() {
