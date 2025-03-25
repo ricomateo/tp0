@@ -47,7 +47,8 @@ func NewClient(config ClientConfig) (*Client, error) {
 		config:          config,
 		receivedSigTerm: false,
 		commHandler: comm.CommunicationHandler{
-			ID: config.ID,
+			ID:            config.ID,
+			ServerAddress: config.ServerAddress,
 		},
 		batcher: batcher,
 	}
@@ -73,17 +74,13 @@ func (c *Client) StartClientLoop() {
 
 	// Loop until the batcher finishes reading the agency file
 	for !c.batcher.Finished {
-		err := c.commHandler.Connect(c.config.ServerAddress)
-		if err != nil {
-			log.Errorf("Failed to connect to the server. Error: %v", err)
-			return
-		}
 		// Atomically read the SIGTERM flag
 		c.mutex.Lock()
 		receivedSigTerm := c.receivedSigTerm
 		c.mutex.Unlock()
 
 		// Exit in case of having received a SIGTERM signal
+		// TODO: this should be out of the loop also
 		if receivedSigTerm {
 			c.exitGracefully()
 		}
@@ -92,32 +89,11 @@ func (c *Client) StartClientLoop() {
 		batch := c.batcher.GetBatch()
 
 		// Send the batch
-		err = c.commHandler.SendBatch(batch)
+		err := c.commHandler.SendBatch(batch)
 		if err != nil {
-			log.Errorf("Failed to send bet message. Error: %s", err)
-		}
-
-		// Receive response message
-		msgType, payload, err := c.commHandler.RecvMsg()
-		if err != nil {
-			log.Errorf("action: receive_message | result: fail | client_id: %v | error: %v",
-				c.config.ID,
-				err,
-			)
-			return
-		}
-		log.Infof("action: receive_message | result: success | client_id: %v",
-			c.config.ID,
-		)
-		if msgType == comm.BatchConfirmationMsg {
-			msg := payload.(*comm.BatchConfirmation)
-			if msg.Status == comm.Failure {
-				log.Errorf("action: batch_enviado | result: failure")
-			} else {
-				log.Info("action: batch_enviado | result: success")
-			}
+			log.Errorf("action: batch_enviado | result: failure | error: %s", err)
 		} else {
-			log.Errorf("Expected batch confirmation message, got %d", msgType)
+			log.Info("action: batch_enviado | result: success")
 		}
 
 		// Wait a time between sending one message and the next one

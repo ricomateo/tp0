@@ -9,8 +9,9 @@ import (
 )
 
 type CommunicationHandler struct {
-	ID   string
-	conn net.Conn
+	ID            string
+	conn          net.Conn
+	ServerAddress string
 }
 
 var log = logging.MustGetLogger("log")
@@ -31,13 +32,33 @@ func (c *CommunicationHandler) Connect(address string) error {
 	return nil
 }
 
-// Send sends the given message through the current socket connection.
+// SendBatch sends the given batch to the server, and waits for the confirmation.
 // In case of failure returns an error
 func (c *CommunicationHandler) SendBatch(bets []BetInfo) error {
 	serializedMsg := serializeBets(bets)
-	_, err := c.conn.Write(serializedMsg)
+	// Connect to the server
+	err := c.Connect(c.ServerAddress)
+	if err != nil {
+		return fmt.Errorf("failed to connect to the server. Error: %s", err)
+	}
+	// Send the message
+	_, err = c.conn.Write(serializedMsg)
+	if err != nil {
+		return fmt.Errorf("failed to send the message to the server. Error: %s", err)
+	}
+	// Receive the response
+	msgType, payload, err := c.RecvMsg()
 	if err != nil {
 		return err
+	}
+	// Check the status response
+	if msgType == BatchConfirmationMsg {
+		msg := payload.(*BatchConfirmation)
+		if msg.Status == Failure {
+			return fmt.Errorf("server returned failure status")
+		}
+	} else {
+		return fmt.Errorf("expected to receive batch confirmation opcode, got %d opcode", msgType)
 	}
 	return nil
 }
@@ -81,7 +102,6 @@ func (c *CommunicationHandler) RecvMsg() (MessageType, interface{}, error) {
 	case NoWinnersYetMsg:
 		return msgType, nil, nil
 	case WinnersMsg:
-		log.Info("Received WinnersMsg!!!")
 		numberOfWinners := c.recvByte()
 		documents := []string{}
 		// TODO: move this to a function
