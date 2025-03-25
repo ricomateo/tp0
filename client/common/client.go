@@ -133,9 +133,11 @@ func (c *Client) StartClientLoop() {
 	// TODO: move the connection step to the send function
 	err = c.commHandler.SendFinalizationMsg()
 	if err != nil {
-		log.Errorf("Failed to send finalization msg to the server. Error: %v")
+		log.Error("action: finalization_enviado | result: failure")
 		return
 	}
+	log.Info("action: finalization_enviado | result: success")
+
 	c.commHandler.Disconnect()
 
 	for {
@@ -146,9 +148,10 @@ func (c *Client) StartClientLoop() {
 		}
 		err = c.commHandler.SendGetWinnersMsg()
 		if err != nil {
-			log.Errorf("Failed to send GetWinners msg to the server. Error: %v")
+			log.Errorf("action: get_winners_enviado | result: failure | error: %v", err)
 			return
 		}
+		log.Info("action: get_winners_enviado | result: success")
 		msgType, payload, err := c.commHandler.RecvMsg()
 		if err != nil {
 			log.Errorf("Failed to receive server message. Error: %v")
@@ -156,9 +159,14 @@ func (c *Client) StartClientLoop() {
 		}
 		c.commHandler.Disconnect()
 		if msgType == comm.WinnersMsg {
-			winners := payload.(comm.Winners)
-			log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %d", winners.Length)
+			winners := payload.([]string)
+			log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %d", len(winners))
 			break
+		}
+		if msgType == comm.NoWinnersYetMsg {
+			log.Infof("action: consulta_ganadores | result: failure (no winners yet)")
+			time.Sleep(1 * time.Second)
+			continue
 		}
 	}
 

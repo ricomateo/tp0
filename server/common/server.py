@@ -38,9 +38,8 @@ class Server:
 
                 elif message_type == GET_WINNERS_MSG_TYPE:
                     agency_id = payload
-                    logging.info(f"Agency {agency_id} requested the winners")
                     if self._all_agencies_finished():
-                        winners = self.winners_by_agency[agency_id]
+                        winners = self.winners_by_agency.get(agency_id, [])
                         self.__communication_handler.send_winners(winners)
                     else:
                         self.__communication_handler.send_no_winners_yet()

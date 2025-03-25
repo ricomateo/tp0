@@ -81,10 +81,17 @@ func (c *CommunicationHandler) RecvMsg() (MessageType, interface{}, error) {
 	case NoWinnersYetMsg:
 		return msgType, nil, nil
 	case WinnersMsg:
+		log.Info("Received WinnersMsg!!!")
 		numberOfWinners := c.recvByte()
-		// TODO: parse the documents
-		winners := Winners{Length: numberOfWinners}
-		return msgType, winners, nil
+		documents := []string{}
+		// TODO: move this to a function
+		for i := 0; i < int(numberOfWinners); i++ {
+			documentLength := c.recvByte()
+			documentBytes := c.recv(uint32(documentLength))
+			document := string(documentBytes[:])
+			documents = append(documents, document)
+		}
+		return msgType, documents, nil
 	}
 	err := fmt.Errorf("received invalid message type %d", msgType)
 	return InvalidMsg, nil, err
