@@ -9,6 +9,7 @@ const (
 	FinalizationMsg
 	GetWinnersMsg
 	NoWinnersYetMsg
+	WinnersMsg
 	InvalidMsg = 255
 )
 
@@ -31,4 +32,9 @@ type BetInfo struct {
 
 type BatchConfirmation struct {
 	Status BatchStatus
+}
+
+type Winners struct {
+	Length  uint8 // TODO: remove this field
+	Winners []string
 }

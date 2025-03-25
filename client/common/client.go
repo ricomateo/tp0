@@ -137,24 +137,31 @@ func (c *Client) StartClientLoop() {
 		return
 	}
 	c.commHandler.Disconnect()
-	err = c.commHandler.Connect(c.config.ServerAddress)
-	if err != nil {
-		log.Errorf("Failed to connect to the server. Error: %v")
-		return
+
+	for {
+		err = c.commHandler.Connect(c.config.ServerAddress)
+		if err != nil {
+			log.Errorf("Failed to connect to the server. Error: %v")
+			return
+		}
+		err = c.commHandler.SendGetWinnersMsg()
+		if err != nil {
+			log.Errorf("Failed to send GetWinners msg to the server. Error: %v")
+			return
+		}
+		msgType, payload, err := c.commHandler.RecvMsg()
+		if err != nil {
+			log.Errorf("Failed to receive server message. Error: %v")
+			return
+		}
+		c.commHandler.Disconnect()
+		if msgType == comm.WinnersMsg {
+			winners := payload.(comm.Winners)
+			log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %d", winners.Length)
+			break
+		}
 	}
-	err = c.commHandler.SendGetWinnersMsg()
-	if err != nil {
-		log.Errorf("Failed to send GetWinners msg to the server. Error: %v")
-		return
-	}
-	msgType, _, err := c.commHandler.RecvMsg()
-	if err != nil {
-		log.Errorf("Failed to receive server message. Error: %v")
-		return
-	}
-	if msgType == comm.NoWinnersYetMsg {
-		log.Info("NO WINNERS YET; TRY LATER")
-	}
+
 	log.Infof("action: loop_finished | result: success | client_id: %v", c.config.ID)
 }
 

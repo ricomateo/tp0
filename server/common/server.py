@@ -33,13 +33,16 @@ class Server:
                     agency_id = payload
                     self._set_agency_as_finished(agency_id)
                     if self._all_agencies_finished():
-                        logging.info(f"All agencies finished!")
+                        logging.info(f"action: sorteo | result: success")
                         self._load_winners()
 
                 elif message_type == GET_WINNERS_MSG_TYPE:
                     agency_id = payload
                     logging.info(f"Agency {agency_id} requested the winners")
-                    if not self._all_agencies_finished():
+                    if self._all_agencies_finished():
+                        winners = self.winners_by_agency[agency_id]
+                        self.__communication_handler.send_winners(winners)
+                    else:
                         self.__communication_handler.send_no_winners_yet()
                 else:
                     # TODO: raise an error

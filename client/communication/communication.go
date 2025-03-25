@@ -80,6 +80,11 @@ func (c *CommunicationHandler) RecvMsg() (MessageType, interface{}, error) {
 		return msgType, &BatchConfirmation{Status: status}, nil
 	case NoWinnersYetMsg:
 		return msgType, nil, nil
+	case WinnersMsg:
+		numberOfWinners := c.recvByte()
+		// TODO: parse the documents
+		winners := Winners{Length: numberOfWinners}
+		return msgType, winners, nil
 	}
 	err := fmt.Errorf("received invalid message type %d", msgType)
 	return InvalidMsg, nil, err
