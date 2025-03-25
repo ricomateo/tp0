@@ -25,10 +25,8 @@ class Server:
                 # TODO: consider creating a Message class
                 message_type, payload = self.__communication_handler.recv_msg()
                 if message_type == BET_BATCH_MSG_TYPE:
-                    bets = payload
-                    store_bets(bets)
-                    logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
-                    self.__communication_handler.send_batch_success()
+                    batch = payload
+                    self._handle_batch_message(batch)
 
                 elif message_type == FINALIZATION_MSG_TYPE:
                     agency_id = payload
@@ -47,14 +45,21 @@ class Server:
                 else:
                     # TODO: raise an error
                     logging.info(f"Invalid message_type = {message_type}")
-            except MessageReceptionError as e:
-                self.__communication_handler.send_batch_failure()
-
             except Exception as e:
                 logging.error(f"failed to handle client connection. Error: {e}")
                 
             finally:
                 self.__communication_handler.close_current_connection()
+
+    def _handle_batch_message(self, batch: list[Bet]):
+        try:
+            bets = batch
+            store_bets(bets)
+            logging.info(f"action: apuesta_recibida | result: success | cantidad: {len(bets)}")
+            self.__communication_handler.send_batch_success()
+        except Exception as e:
+            logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")
+            self.__communication_handler.send_batch_failure()
 
     def _all_agencies_finished(self) -> bool:
         agencies_ids = list(range(1, self.number_of_clients + 1))
@@ -62,7 +67,7 @@ class Server:
             if id not in self.finished_agencies:
                 return False
         return True
-    
+
     def _set_agency_as_finished(self, agency: int):
         self.finished_agencies.add(agency)
 
