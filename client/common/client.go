@@ -57,33 +57,12 @@ func NewClient(config ClientConfig) (*Client, error) {
 
 // StartClientLoop Send messages to the client until some time threshold is met
 func (c *Client) StartClientLoop() {
-	signalChannel := make(chan os.Signal, 2)
-	// Set the SIGTERM handler
-	signal.Notify(signalChannel, syscall.SIGTERM)
-	go func() {
-		sig := <-signalChannel
-		if sig == syscall.SIGTERM {
-			log.Info("Received SIGTERM signal")
-			c.mutex.Lock()
-			c.receivedSigTerm = true
-			c.mutex.Unlock()
-		}
-	}()
-	// Wait for server startup
-	time.Sleep(1 * time.Second)
+	defer c.checkForShutdown()
+	c.setSigTermHandler()
 
 	// Loop until the batcher finishes reading the agency file
 	for !c.batcher.Finished {
-		// Atomically read the SIGTERM flag
-		c.mutex.Lock()
-		receivedSigTerm := c.receivedSigTerm
-		c.mutex.Unlock()
-
-		// Exit in case of having received a SIGTERM signal
-		// TODO: this should be out of the loop also
-		if receivedSigTerm {
-			c.exitGracefully()
-		}
+		c.checkForShutdown()
 
 		// Get the next batch of bets
 		batch := c.batcher.GetBatch()
@@ -119,6 +98,7 @@ func (c *Client) StartClientLoop() {
 // It sleeps for a second between requests
 func (c *Client) requestWinners() ([]string, error) {
 	for {
+		c.checkForShutdown()
 		response, err := c.commHandler.GetWinners()
 		if err != nil {
 			return nil, err
@@ -150,4 +130,31 @@ func (c *Client) exitGracefully() {
 	}
 	log.Info("Client exited gracefully")
 	os.Exit(0)
+}
+
+func (c *Client) setSigTermHandler() {
+	signalChannel := make(chan os.Signal, 2)
+	// Set the SIGTERM handler
+	signal.Notify(signalChannel, syscall.SIGTERM)
+	go func() {
+		sig := <-signalChannel
+		if sig == syscall.SIGTERM {
+			log.Info("Received SIGTERM signal")
+			c.mutex.Lock()
+			c.receivedSigTerm = true
+			c.mutex.Unlock()
+		}
+	}()
+}
+
+func (c *Client) checkForShutdown() {
+	// Atomically read the SIGTERM flag
+	c.mutex.Lock()
+	receivedSigTerm := c.receivedSigTerm
+	c.mutex.Unlock()
+
+	// Exit in case of having received a SIGTERM signal
+	if receivedSigTerm {
+		c.exitGracefully()
+	}
 }
