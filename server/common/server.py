@@ -29,19 +29,16 @@ class Server:
         agencies_counter = Value('i', 0)
         
         file_lock = Lock()
-        # TODO: replace the while loop with a for loop that loops for number_of_clients
         for _ in range(self.number_of_clients):
             if self._should_exit() is True:
-                self._graceful_shutdown()
-            # TODO: find a way for the server to know when to join the processes
+                break
             client_socket = self.accept_new_connection()
             session_handler = SessionHandler(client_socket, self.number_of_clients, agencies_counter, file_lock, self.should_exit)
             session = Process(target=session_handler.start)
             self.sessions.append(session)
             session.start()
         
-        for session in self.sessions:
-            session.join()
+        self._graceful_shutdown()
 
 
     def accept_new_connection(self):
@@ -66,15 +63,15 @@ class Server:
             self.should_exit.value = 1
 
     def _graceful_shutdown(self):
-        # TODO: add more logs!
-        logging.info("Shutting down!")
+        logging.info("Shutting down")
+        logging.info("Closing server socket")
         self._server_socket.close()
+        logging.info("Joining sessions")
         for session in self.sessions:
             session.join()
         sys.exit(0)
 
 
     def _should_exit(self):
-        logging.info(f"self.should_exit.value = {self.should_exit.value}")
         return self.should_exit.value == 1
     

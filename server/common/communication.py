@@ -116,17 +116,3 @@ class CommunicationHandler:
         str_len = int.from_bytes(self._client_sock.recv(1), "big")
         string = str(self._client_sock.recv(str_len), 'utf-8')
         return string
-
-    def __sigterm_handler(self, signum, _):
-        if signum == signal.SIGTERM:
-            # This assignment is atomic
-            self._received_sig_term = True
-
-    def __exit_gracefully(self):
-        logging.info("Exiting gracefully")
-        logging.info("Shutting down server")
-        self._server_socket.shutdown(socket.SHUT_RDWR)
-        if self._client_sock is not None:
-            logging.info("Closing socket connection")
-            self._client_sock.close()
-        sys.exit(0)

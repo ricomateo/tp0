@@ -16,17 +16,11 @@ class SessionHandler:
 
     def start(self):
         """
-        Dummy Server loop
-
-        Server that accept new connections and establishes a
-        communication with a client. After client with communucation
-        finishes, servers starts to accept new connections again
         """
         while True:
             try:
                 if self._should_exit() is True:
-                    self._graceful_shutdown()
-                # TODO: consider creating a Message class
+                    break
                 message_type, payload = self.__communication_handler.recv_msg()
                 if message_type == BET_BATCH_MSG_TYPE:
                     batch = payload
@@ -45,14 +39,13 @@ class SessionHandler:
                     else:
                         self.__communication_handler.send_no_winners_yet()
                 else:
-                    # TODO: raise an error
-                    logging.info(f"Invalid message_type = {message_type}")
+                    logging.info(f"invalid message_type = {message_type}")
             except Exception as e:
                 logging.error(f"failed to handle client connection. Error: {e}")
                 
         self.__communication_handler.close_current_connection()
 
-    def _handle_batch_message(self, batch: list[Bet]):
+    def _handle_batch_message(self, batch : list[Bet]):
         try:
             bets = batch
             with self.file_lock:
@@ -79,8 +72,3 @@ class SessionHandler:
 
     def _should_exit(self) -> bool:
         return self.should_exit.value == 1
-    
-    def _graceful_shutdown(self):
-        # TODO: check if there is anything else to close
-        self.__communication_handler.close_current_connection()
-        exit(0)
