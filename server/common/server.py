@@ -34,13 +34,18 @@ class Server:
         processes = []
         file_lock = Lock()
         # TODO: replace the while loop with a for loop that loops for number_of_clients
-        while True:
+        for _ in range(self.number_of_clients):
             # TODO: find a way for the server to know when to join the processes
             client_socket = self.accept_new_connection()
             session_handler = SessionHandler(client_socket, self.number_of_clients, agencies_counter, file_lock)
             p = Process(target=session_handler.start)
             processes.append(p)
             p.start()
+        
+        for p in processes:
+            p.join()
+        logging.info(f"action: sorteo | result: success")
+
 
     def accept_new_connection(self):
         """

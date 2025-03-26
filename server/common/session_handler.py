@@ -33,13 +33,11 @@ class SessionHandler:
                 elif message_type == FINALIZATION_MSG_TYPE:
                     agency_id = payload
                     self._set_agency_as_finished()
-                    if self._all_agencies_finished():
-                        logging.info(f"action: sorteo | result: success")
-                        self._load_winners()
 
                 elif message_type == GET_WINNERS_MSG_TYPE:
                     agency_id = payload
                     if self._all_agencies_finished():
+                        self._load_winners()
                         winners = self.winners_by_agency.get(agency_id, [])
                         self.__communication_handler.send_winners(winners)
                         break
@@ -51,12 +49,10 @@ class SessionHandler:
             except Exception as e:
                 logging.error(f"failed to handle client connection. Error: {e}")
                 
-            # finally:
         self.__communication_handler.close_current_connection()
 
     def _handle_batch_message(self, batch: list[Bet]):
         try:
-            # TODO: check concurrency issues here
             bets = batch
             with self.file_lock:
                 store_bets(bets)
@@ -73,8 +69,8 @@ class SessionHandler:
         self.agencies_counter.value += 1
 
     def _load_winners(self):
-        # TODO: check concurrency issues here
         bets = load_bets()
         for bet in bets:
             if has_won(bet):
                 self.winners_by_agency.setdefault(bet.agency, []).append(bet.document)
+
