@@ -18,12 +18,22 @@ class Server:
         self._server_socket.listen(listen_backlog)
         # Set socket timeout to check for the signal flag
         self._server_socket.settimeout(SOCKET_TIMEOUT)
+
+        # Shared flag that is set to 1 when the server receives a SIGTERM signal.
         self.should_exit = Value('i', 0)
         self.number_of_clients = int(number_of_clients)
         self.sessions = []
 
     def run(self):
         """
+        The Server listens for client connections and spawns a SessionHandler process to handle the session.
+
+        Each of the sessions share some shared variables:
+            * agencies_counter: this variable counts the clients that have finalized sending their batches.
+            If agencies_counter == number_of_clients, then the winners can be sent to the clients.
+            * file_lock: a lock to synchronize the access to the file.
+            * should_exit: a flag that is set to 1 when the server receives a SIGTERM signal. The session handlers constantly
+            check this value to know if they should exit.
         """
         # This counter holds the number of agencies that have finalized sending their bets
         agencies_counter = Value('i', 0)
@@ -43,6 +53,8 @@ class Server:
 
     def accept_new_connection(self):
         """
+        Blocks for SOCKET_TIMEOUT waiting for connections. The timeout is required to check for the
+        'should_exit' flag.
         """
 
         while True:
@@ -59,10 +71,17 @@ class Server:
                 continue
     
     def __sigterm_handler(self, signum, _):
+        """
+        SIGTERM handler. Sets the shared flag 'should_exit' to 1.
+        """
         if signum == signal.SIGTERM:
             self.should_exit.value = 1
 
     def _graceful_shutdown(self):
+        """
+        Shuts down the server gracefully, closing the socket, and joining all the sessions.
+        Each session closes its own socket.
+        """
         logging.info("Shutting down")
         logging.info("Closing server socket")
         self._server_socket.close()

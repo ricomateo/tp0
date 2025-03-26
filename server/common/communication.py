@@ -6,6 +6,7 @@ from common.utils import Bet
 from common.error import MessageReceptionError
 
 SOCKET_TIMEOUT = 5
+
 BET_BATCH_MSG_TYPE = 0
 BATCH_CONFIRMATION_MSG_TYPE = 1
 FINALIZATION_MSG_TYPE = 2
@@ -17,12 +18,16 @@ BATCH_FAILURE_STATUS = 0
 BATCH_SUCCESS_STATUS = 1
 
 class CommunicationHandler:
+    """
+    This object is in charge of the client communication.
+    That includes sending, receiving, serializing and deserializing client messages.
+    """
     def __init__(self, client_socket):
         self._client_sock = client_socket
 
     def recv_msg(self):
         """
-        Reads a message from the current client socket
+        Reads a message from the current client socket, and returns it
         """
         try:
             message_type = int.from_bytes(self._client_sock.recv(1), "big")
@@ -45,6 +50,9 @@ class CommunicationHandler:
             raise MessageReceptionError(e)
 
     def send_winners(self, winners: list[str]):
+        """
+        Sends the given list of winners to the client.
+        """
         message_type = WINNERS_MSG_TYPE
         number_of_winners = len(winners)
         # Send message type
@@ -58,20 +66,37 @@ class CommunicationHandler:
             self._client_sock.sendall(document.encode('utf-8'))
 
     def send_no_winners_yet(self):
+        """
+        Sends the message NO_WINNERS_YET to the client
+        """
         message_type = NO_WINNERS_YET_MSG_TYPE
         # Send message type
         self._client_sock.sendall(message_type.to_bytes(1, "big"))
 
     def send_batch_success(self):
+        """
+        Sends a message to the client, informing that 
+        the previously received batch has been successfully processed.
+        """
         self.__send_batch_status(BATCH_SUCCESS_STATUS)
 
     def send_batch_failure(self):
+        """
+        Sends a message to the client, informing that 
+        there has been an error processing the previously received batch.
+        """
         self.__send_batch_status(BATCH_FAILURE_STATUS)
 
     def close_current_connection(self):
+        """
+        Closes the current connection
+        """
         self._client_sock.close()
 
     def __decode_bet_batch(self) -> list[Bet]:
+        """
+        Receives a message and decodes it into a list of bets.
+        """
         batch_size = int.from_bytes(self._client_sock.recv(4), "big")
         bets = []
         for _ in range(batch_size):
@@ -80,14 +105,23 @@ class CommunicationHandler:
         return bets
 
     def __decode_get_winners_msg(self) -> int:
+        """
+        Receives a message and decodes it into a winners message.
+        """
         agency_id = self.__recv_str()
         return int(agency_id)
 
     def __decode_finalization_msg(self) -> int:
+        """
+        Receives a message and decodes it into a finalization message.
+        """
         agency_id = self.__recv_str()
         return int(agency_id)
 
     def __send_batch_status(self, status: int):
+        """
+        Sends the given batch status to the client.
+        """
         message_type = BATCH_CONFIRMATION_MSG_TYPE
         # Send message type
         self._client_sock.sendall(message_type.to_bytes(1, "big"))

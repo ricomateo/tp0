@@ -7,15 +7,23 @@ from common.utils import *
 
 class SessionHandler:
     def __init__(self, client_socket, number_of_clients, agencies_counter, file_lock, should_exit):
+        # Communication handler, in charge of sending and receiving messages
         self.__communication_handler = CommunicationHandler(client_socket)
+        # A list of the winners 
         self.winners = []
         self.number_of_clients = number_of_clients
+        # This counter is a variable shared between the Session Handlers and the server.
+        # It is used to track how many agencies have finalized sending their batches.
         self.agencies_counter = agencies_counter
+        # File lock used to synchronize file access
         self.file_lock = file_lock
+        # Shared flag used to know whether the session handler must exit
         self.should_exit = should_exit
 
     def start(self):
         """
+        The Session Handler receives messages from the client and handles them.
+        Once the bet winners have been sent to the client, the Session handler exits.
         """
         while True:
             try:
@@ -46,6 +54,9 @@ class SessionHandler:
         self.__communication_handler.close_current_connection()
 
     def _handle_batch_message(self, batch : list[Bet]):
+        """
+        Handles the batch message, storing the bets and sending a response (success or failure).
+        """
         try:
             bets = batch
             with self.file_lock:
@@ -57,14 +68,23 @@ class SessionHandler:
             self.__communication_handler.send_batch_failure()
 
     def _all_agencies_finished(self) -> bool:
+        """
+        Helper method to know whether all agencies have finalized sending their batches.
+        """
         return self.agencies_counter.value == self.number_of_clients 
 
     def _set_agency_as_finished(self):
+        """
+        Increments the shared counter that tracks how many agencies have finalized sending their batches.
+        """
         self.agencies_counter.value += 1
         if self._all_agencies_finished:
             logging.info(f"action: sorteo | result: success")
 
     def _load_winners(self, agency_id):
+        """
+        Loads the winners of the given agency.
+        """
         bets = load_bets()
         for bet in bets:
             if has_won(bet) and bet.agency == agency_id:
