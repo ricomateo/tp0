@@ -30,6 +30,7 @@ def generate_compose(base_file, output_file, clients):
             "entrypoint": "/client",
             "environment": [
                 "CLI_ID=1",
+                "AGENCY_FILE=/agency.csv",
             ],
             "networks": ["testing_net"],
             "depends_on": ["server"],
