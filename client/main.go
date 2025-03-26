@@ -111,6 +111,7 @@ func main() {
 		LoopAmount:    v.GetInt("loop.amount"),
 		LoopPeriod:    v.GetDuration("loop.period"),
 		BatchSize:     v.GetInt("batch.maxAmount"),
+		AgencyFile:    os.Getenv("AGENCY_FILE"),
 	}
 
 	client, err := common.NewClient(clientConfig)
