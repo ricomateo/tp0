@@ -8,7 +8,7 @@ from common.utils import *
 class SessionHandler:
     def __init__(self, client_socket, number_of_clients, agencies_counter, file_lock):
         self.__communication_handler = CommunicationHandler(client_socket)
-        self.winners_by_agency = {}
+        self.winners = []
         self.number_of_clients = number_of_clients
         self.agencies_counter = agencies_counter
         self.file_lock = file_lock
@@ -37,9 +37,8 @@ class SessionHandler:
                 elif message_type == GET_WINNERS_MSG_TYPE:
                     agency_id = payload
                     if self._all_agencies_finished():
-                        self._load_winners()
-                        winners = self.winners_by_agency.get(agency_id, [])
-                        self.__communication_handler.send_winners(winners)
+                        self._load_winners(agency_id)
+                        self.__communication_handler.send_winners(self.winners)
                         break
                     else:
                         self.__communication_handler.send_no_winners_yet()
@@ -68,9 +67,9 @@ class SessionHandler:
     def _set_agency_as_finished(self):
         self.agencies_counter.value += 1
 
-    def _load_winners(self):
+    def _load_winners(self, agency_id):
         bets = load_bets()
         for bet in bets:
-            if has_won(bet):
-                self.winners_by_agency.setdefault(bet.agency, []).append(bet.document)
+            if has_won(bet) and bet.agency == agency_id:
+                self.winners.append(bet.document)
 
