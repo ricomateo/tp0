@@ -10,6 +10,7 @@ class Server:
         self.finished_agencies = set()
         self.winners_by_agency = {}
         self.number_of_clients = int(number_of_clients)
+        self.clients_received_winners = 0
 
     def run(self):
         """
@@ -21,6 +22,8 @@ class Server:
         """
         while True:
             try:
+                if self._finished():
+                    break
                 self.__communication_handler.accept_new_connection()
                 # TODO: consider creating a Message class
                 message_type, payload = self.__communication_handler.recv_msg()
@@ -40,6 +43,7 @@ class Server:
                     if self._all_agencies_finished():
                         winners = self.winners_by_agency.get(agency_id, [])
                         self.__communication_handler.send_winners(winners)
+                        self.clients_received_winners += 1
                     else:
                         self.__communication_handler.send_no_winners_yet()
                 else:
@@ -50,6 +54,8 @@ class Server:
                 
             finally:
                 self.__communication_handler.close_current_connection()
+
+        self.__communication_handler._server_socket.close()
 
     def _handle_batch_message(self, batch: list[Bet]):
         try:
@@ -76,3 +82,9 @@ class Server:
         for bet in bets:
             if has_won(bet):
                 self.winners_by_agency.setdefault(bet.agency, []).append(bet.document)
+
+    def _finished(self):
+        """
+        If all the clients have received its corresponding agency winners, then the server can exit.
+        """
+        return self.clients_received_winners == self.number_of_clients
