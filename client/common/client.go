@@ -60,6 +60,7 @@ func (c *Client) StartClientLoop() {
 	defer c.checkForShutdown()
 	c.setSigTermHandler()
 
+	c.commHandler.Connect(c.config.ServerAddress)
 	// Loop until the batcher finishes reading the agency file
 	for !c.batcher.Finished {
 		c.checkForShutdown()
@@ -92,6 +93,7 @@ func (c *Client) StartClientLoop() {
 		return
 	}
 	log.Infof("action: consulta_ganadores | result: success | cant_ganadores: %d", len(betWinners))
+	c.commHandler.Disconnect()
 }
 
 // requestWinners loops requesting the winners to the server, until it responds with the winners

@@ -17,41 +17,9 @@ BATCH_FAILURE_STATUS = 0
 BATCH_SUCCESS_STATUS = 1
 
 class CommunicationHandler:
-    def __init__(self, port, listen_backlog):
-        # Set the SIGTERM handler
-        signal.signal(signal.SIGTERM, self.__sigterm_handler)
-        # Initialize server socket
-        self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self._server_socket.bind(('', port))
-        self._server_socket.listen(listen_backlog)
-        # Set socket timeout to check for the signal flag
-        self._server_socket.settimeout(SOCKET_TIMEOUT)
-        self._client_sock = None
-        self._received_sig_term = False
-
-    def accept_new_connection(self):
-        """
-        Accept new connections
-
-        Function blocks for SOCKET_TIMEOUT seconds until a connection to a client is made.
-        Then connection created is printed and returned.
-        If a SIGTERM signal has been received by the time the socket times out,
-        then the server exits gracefully.
-        """
-
-        while True:
-            if self._received_sig_term:
-                self.__exit_gracefully()
-            try:
-                # Connection arrived
-                logging.info('action: accept_connections | result: in_progress')
-                c, addr = self._server_socket.accept()
-                logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
-                self._client_sock = c
-                return
-            except socket.timeout:
-                # This timeout allows to check for the SIGTERM signal more regularly
-                continue
+    def __init__(self, client_socket):
+        self._client_sock = client_socket
+        # self._received_sig_term = False
 
     def recv_msg(self):
         """

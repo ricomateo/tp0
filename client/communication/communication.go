@@ -36,14 +36,8 @@ func (c *CommunicationHandler) Connect(address string) error {
 // In case of failure returns an error
 func (c *CommunicationHandler) SendBatch(bets []BetInfo) error {
 	serializedMsg := serializeBets(bets)
-	// Connect to the server
-	err := c.Connect(c.ServerAddress)
-	defer c.Disconnect()
-	if err != nil {
-		return fmt.Errorf("failed to connect to the server. Error: %s", err)
-	}
 	// Send the message
-	_, err = c.conn.Write(serializedMsg)
+	_, err := c.conn.Write(serializedMsg)
 	if err != nil {
 		return fmt.Errorf("failed to send the message to the server. Error: %s", err)
 	}
@@ -67,14 +61,8 @@ func (c *CommunicationHandler) SendBatch(bets []BetInfo) error {
 // Send sends the given message through the current socket connection.
 // In case of failure returns an error
 func (c *CommunicationHandler) SendFinalizationMsg() error {
-	err := c.Connect(c.ServerAddress)
-	defer c.Disconnect()
-	if err != nil {
-		return err
-	}
-
 	serializedMsg := serializeFinalizationMsg(c.ID)
-	_, err = c.conn.Write(serializedMsg)
+	_, err := c.conn.Write(serializedMsg)
 	if err != nil {
 		return err
 	}
@@ -86,13 +74,8 @@ func (c *CommunicationHandler) SendFinalizationMsg() error {
 // and returns the response received from the server.
 // In case of failure returns an error
 func (c *CommunicationHandler) GetWinners() (*GetWinnersResponse, error) {
-	err := c.Connect(c.ServerAddress)
-	defer c.Disconnect()
-	if err != nil {
-		return nil, err
-	}
 	serializedMsg := serializeGetWinnersMsg(c.ID)
-	_, err = c.conn.Write(serializedMsg)
+	_, err := c.conn.Write(serializedMsg)
 	if err != nil {
 		return nil, err
 	}
