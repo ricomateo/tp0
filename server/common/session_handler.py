@@ -6,12 +6,13 @@ from common.utils import *
 
 
 class SessionHandler:
-    def __init__(self, client_socket, number_of_clients, agencies_counter, file_lock):
+    def __init__(self, client_socket, number_of_clients, agencies_counter, file_lock, should_exit):
         self.__communication_handler = CommunicationHandler(client_socket)
         self.winners = []
         self.number_of_clients = number_of_clients
         self.agencies_counter = agencies_counter
         self.file_lock = file_lock
+        self.should_exit = should_exit
 
     def start(self):
         """
@@ -23,7 +24,8 @@ class SessionHandler:
         """
         while True:
             try:
-
+                if self._should_exit() is True:
+                    self._graceful_shutdown()
                 # TODO: consider creating a Message class
                 message_type, payload = self.__communication_handler.recv_msg()
                 if message_type == BET_BATCH_MSG_TYPE:
@@ -75,3 +77,10 @@ class SessionHandler:
             if has_won(bet) and bet.agency == agency_id:
                 self.winners.append(bet.document)
 
+    def _should_exit(self) -> bool:
+        return self.should_exit.value == 1
+    
+    def _graceful_shutdown(self):
+        # TODO: check if there is anything else to close
+        self.__communication_handler.close_current_connection()
+        exit(0)

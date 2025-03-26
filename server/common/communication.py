@@ -19,7 +19,6 @@ BATCH_SUCCESS_STATUS = 1
 class CommunicationHandler:
     def __init__(self, client_socket):
         self._client_sock = client_socket
-        # self._received_sig_term = False
 
     def recv_msg(self):
         """
