@@ -44,7 +44,6 @@ class Server:
         
         for p in processes:
             p.join()
-        logging.info(f"action: sorteo | result: success")
 
 
     def accept_new_connection(self):

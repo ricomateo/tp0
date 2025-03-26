@@ -66,6 +66,8 @@ class SessionHandler:
 
     def _set_agency_as_finished(self):
         self.agencies_counter.value += 1
+        if self._all_agencies_finished:
+            logging.info(f"action: sorteo | result: success")
 
     def _load_winners(self, agency_id):
         bets = load_bets()
