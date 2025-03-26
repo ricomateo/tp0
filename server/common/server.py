@@ -25,7 +25,6 @@ class Server:
                 if self._finished():
                     break
                 self.__communication_handler.accept_new_connection()
-                # TODO: consider creating a Message class
                 message_type, payload = self.__communication_handler.recv_msg()
                 if message_type == BET_BATCH_MSG_TYPE:
                     batch = payload
@@ -47,7 +46,6 @@ class Server:
                     else:
                         self.__communication_handler.send_no_winners_yet()
                 else:
-                    # TODO: raise an error
                     logging.info(f"Invalid message_type = {message_type}")
             except Exception as e:
                 logging.error(f"failed to handle client connection. Error: {e}")
