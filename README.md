@@ -366,3 +366,13 @@ Los ganadores se serializan de la siguiente forma
 1. Longitud del documento: 1 byte
 2. Documento
 
+## Mecanismos de sincronización
+
+Como parte de la solución del ejercicio 8, el servidor levanta un proceso (del módulo `multiprocessing`) por cada cliente para procesar sus mensajes.
+
+Estos procesos procesan mensajes en paralelo, modificando un estado mutable compartido compuesto por los siguientes recursos:
+* El archivo en el cual se van guardando las apuestas de los clientes.
+* Un contador que trackea la cantidad de clientes que terminó de enviar sus apuestas. Este es incrementado por cada proceso al recibir los mensajes de los clientes informando que han enviado todas sus apuestas. De esta forma, todos los procesos pueden saber si el sorteo se realizó o no (al recibir la solicitud de los ganadores de parte del cliente, cada proceso chequea el contador y determina si puede enviar los ganadores o no).
+
+Para evitar race conditions sobre estos recursos fue necesario sincronizar los accesos, por lo cual se utilizaron locks de `multiprocessing` para garantizar la exclusión mutua en ambos casos.
+En el caso del contador, para poder compartir la variable entre los procesos se utilizó `csharedtypes.Value` del módulo `multiprocessing` de Python.
