@@ -37,13 +37,13 @@ class Server:
         """
         # This counter holds the number of agencies that have finalized sending their bets
         agencies_counter = Value('i', 0)
-        
+        agencies_counter_lock = Lock()
         file_lock = Lock()
         for _ in range(self.number_of_clients):
             if self._should_exit() is True:
                 break
             client_socket = self.accept_new_connection()
-            session_handler = SessionHandler(client_socket, self.number_of_clients, agencies_counter, file_lock, self.should_exit)
+            session_handler = SessionHandler(client_socket, self.number_of_clients, agencies_counter, agencies_counter_lock, file_lock, self.should_exit)
             session = Process(target=session_handler.start)
             self.sessions.append(session)
             session.start()

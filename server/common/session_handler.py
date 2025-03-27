@@ -6,7 +6,7 @@ from common.utils import *
 
 
 class SessionHandler:
-    def __init__(self, client_socket, number_of_clients, agencies_counter, file_lock, should_exit):
+    def __init__(self, client_socket, number_of_clients, agencies_counter, agencies_counter_lock, file_lock, should_exit):
         # Communication handler, in charge of sending and receiving messages
         self.__communication_handler = CommunicationHandler(client_socket)
         # A list of the winners 
@@ -15,6 +15,8 @@ class SessionHandler:
         # This counter is a variable shared between the Session Handlers and the server.
         # It is used to track how many agencies have finalized sending their batches.
         self.agencies_counter = agencies_counter
+        # Lock to increment the agencies_counter variable atomically
+        self.agencies_counter_lock = agencies_counter_lock
         # File lock used to synchronize file access
         self.file_lock = file_lock
         # Shared flag used to know whether the session handler must exit
@@ -71,13 +73,15 @@ class SessionHandler:
         """
         Helper method to know whether all agencies have finalized sending their batches.
         """
-        return self.agencies_counter.value == self.number_of_clients 
+        with self.agencies_counter_lock:
+            return self.agencies_counter.value == self.number_of_clients 
 
     def _set_agency_as_finished(self):
         """
         Increments the shared counter that tracks how many agencies have finalized sending their batches.
         """
-        self.agencies_counter.value += 1
+        with self.agencies_counter_lock:
+            self.agencies_counter.value += 1
         if self._all_agencies_finished:
             logging.info(f"action: sorteo | result: success")
 
