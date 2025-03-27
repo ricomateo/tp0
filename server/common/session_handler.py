@@ -6,21 +6,19 @@ from common.utils import *
 
 
 class SessionHandler:
-    def __init__(self, client_socket, number_of_clients, agencies_counter, agencies_counter_lock, file_lock, should_exit):
+    def __init__(self, client_socket, number_of_clients, file_lock, should_exit, barrier):
         # Communication handler, in charge of sending and receiving messages
         self.__communication_handler = CommunicationHandler(client_socket)
         # A list of the winners 
         self.winners = []
         self.number_of_clients = number_of_clients
         # This counter is a variable shared between the Session Handlers and the server.
-        # It is used to track how many agencies have finalized sending their batches.
-        self.agencies_counter = agencies_counter
-        # Lock to increment the agencies_counter variable atomically
-        self.agencies_counter_lock = agencies_counter_lock
         # File lock used to synchronize file access
         self.file_lock = file_lock
         # Shared flag used to know whether the session handler must exit
         self.should_exit = should_exit
+        # Barrier to wait for all the clients to send their bets
+        self.barrier = barrier
 
     def start(self):
         """
@@ -37,17 +35,16 @@ class SessionHandler:
                     self._handle_batch_message(batch)
 
                 elif message_type == FINALIZATION_MSG_TYPE:
-                    agency_id = payload
-                    self._set_agency_as_finished()
+                    continue
 
                 elif message_type == GET_WINNERS_MSG_TYPE:
                     agency_id = payload
-                    if self._all_agencies_finished():
-                        self._load_winners(agency_id)
-                        self.__communication_handler.send_winners(self.winners)
-                        break
-                    else:
-                        self.__communication_handler.send_no_winners_yet()
+                    # All the session handlers are synchronized here 
+                    self.barrier.wait()
+                    logging.info(f"action: sorteo | result: success")
+                    self._load_winners(agency_id)
+                    self.__communication_handler.send_winners(self.winners)
+                    break
                 else:
                     logging.info(f"invalid message_type = {message_type}")
             except Exception as e:
@@ -68,22 +65,6 @@ class SessionHandler:
         except Exception as e:
             logging.error(f"action: apuesta_recibida | result: fail | cantidad: {len(bets)}")
             self.__communication_handler.send_batch_failure()
-
-    def _all_agencies_finished(self) -> bool:
-        """
-        Helper method to know whether all agencies have finalized sending their batches.
-        """
-        with self.agencies_counter_lock:
-            return self.agencies_counter.value == self.number_of_clients 
-
-    def _set_agency_as_finished(self):
-        """
-        Increments the shared counter that tracks how many agencies have finalized sending their batches.
-        """
-        with self.agencies_counter_lock:
-            self.agencies_counter.value += 1
-        if self._all_agencies_finished:
-            logging.info(f"action: sorteo | result: success")
 
     def _load_winners(self, agency_id):
         """

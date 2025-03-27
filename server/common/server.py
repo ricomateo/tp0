@@ -1,5 +1,5 @@
 import logging
-from multiprocessing import Process, Lock
+from multiprocessing import Process, Lock, Barrier
 from multiprocessing.sharedctypes import Value
 from common.session_handler import SessionHandler
 from common.communication import *
@@ -23,6 +23,7 @@ class Server:
         self.should_exit = Value('i', 0)
         self.number_of_clients = int(number_of_clients)
         self.sessions = []
+        self.barrier = Barrier(self.number_of_clients)
 
     def run(self):
         """
@@ -36,14 +37,12 @@ class Server:
             check this value to know if they should exit.
         """
         # This counter holds the number of agencies that have finalized sending their bets
-        agencies_counter = Value('i', 0)
-        agencies_counter_lock = Lock()
         file_lock = Lock()
         for _ in range(self.number_of_clients):
             if self._should_exit() is True:
                 break
             client_socket = self.accept_new_connection()
-            session_handler = SessionHandler(client_socket, self.number_of_clients, agencies_counter, agencies_counter_lock, file_lock, self.should_exit)
+            session_handler = SessionHandler(client_socket, self.number_of_clients, file_lock, self.should_exit, self.barrier)
             session = Process(target=session_handler.start)
             self.sessions.append(session)
             session.start()
