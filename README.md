@@ -373,11 +373,25 @@ Los ganadores se serializan de la siguiente forma
 
 ## Mecanismos de sincronización
 
-Como parte de la solución del ejercicio 8, el servidor levanta un proceso (del módulo `multiprocessing`) por cada cliente para procesar sus mensajes.
+Como parte de la solución del ejercicio 8, el servidor levanta un proceso (del módulo `multiprocessing`) por cada cliente para procesar sus mensajes. A continuación se detallan los distintos mecanismos utilizados para sincronizar dichos procesos paralelos.
 
-Estos procesos procesan mensajes en paralelo, modificando un estado mutable compartido compuesto por los siguientes recursos:
-* El archivo en el cual se van guardando las apuestas de los clientes.
-* Un contador que trackea la cantidad de clientes que terminó de enviar sus apuestas. Este es incrementado por cada proceso al recibir los mensajes de los clientes informando que han enviado todas sus apuestas. De esta forma, todos los procesos pueden saber si el sorteo se realizó o no (al recibir la solicitud de los ganadores de parte del cliente, cada proceso chequea el contador y determina si puede enviar los ganadores o no).
+### Sincronización de escritura de apuestas
 
-Para evitar race conditions sobre estos recursos fue necesario sincronizar los accesos, por lo cual se utilizaron locks de `multiprocessing` para garantizar la exclusión mutua en ambos casos.
-En el caso del contador, para poder compartir la variable entre los procesos se utilizó `csharedtypes.Value` del módulo `multiprocessing` de Python.
+Los distintos procesos procesan mensajes en paralelo, modificando un archivo compartido en el cual van escribiendo las apuestas de los clientes.
+Para evitar race conditions sobre este archivo, se utiliza un lock (`multiprocessing.Lock`) compartido entre los procesos, el cual se toma antes de escribir en el archivo. 
+
+Dado que la lectura del archivo solo ocurre una vez que todos los procesos escribieron todas sus apuestas (es decir, en ningún momento se intercalan lecturas y escrituras del archivo), no hace falta tomar el lock en este caso.
+
+### Sincronización del sorteo
+
+Por el enunciado, el sorteo de los ganadores debe realizarse una vez que se hayan recibido las apuestas de **todos los clientes**.
+
+Esto requiere cierta sincronización de parte de los procesos del server, para que envíen los ganadores al mismo tiempo.
+
+Para solucionarlo, se utilizó una barrera (`multiprocessing.Barrier`) compartida entre los procesos del server.
+
+Si un proceso está esperando en la barrera, esto representa que dicho proceso está "listo para hacer el sorteo". Cuando todos los procesos están esperando en la barrera, se dispara el sorteo.
+
+Si un cliente le solicita los ganadores al proceso al cual está conectado, esto quiere decir que ese cliente ha enviado todas sus apuestas, por lo tanto, ese proceso del server se pone a esperar en la barrera (está listo para el sorteo). La barrera se libera cuando todos los procesos están esperando.
+
+Al liberarse la barrera, los procesos le envían los ganadores a sus respectivos clientes.
