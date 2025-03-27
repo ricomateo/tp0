@@ -6,7 +6,8 @@ SOCKET_TIMEOUT = 5
 BET_INFO_MSG_TYPE = 0
 
 class Server:
-    def __init__(self, port, listen_backlog):
+    def __init__(self, port, listen_backlog, number_of_clients):
+        self.number_of_clients = number_of_clients
         self.__communication_handler = CommunicationHandler(port, listen_backlog)
         
 
@@ -18,7 +19,7 @@ class Server:
         communication with a client. After client with communucation
         finishes, servers starts to accept new connections again
         """
-        while True:
+        for _ in range(self.number_of_clients):
             try:
                 self.__communication_handler.accept_new_connection()
                 bet = self.__communication_handler.recv_msg()
