@@ -14,11 +14,15 @@ class Server:
 
     def run(self):
         """
-        Dummy Server loop
+        The server loops listening for client connections, processes the
+        incoming messages, and sends the responses through the communication handler.
 
-        Server that accept new connections and establishes a
-        communication with a client. After client with communucation
-        finishes, servers starts to accept new connections again
+        For each connection, the server receives one message, sends its response and
+        closes the connection. This allow for different clients to be handled in an interleaving fashion.
+
+        It has a set of finished_agencies, which holds the agencies that have finished 
+        sending their bets batches. Once all the agencies have finished, then the winners
+        can be sent to the agencies.
         """
         while True:
             try:

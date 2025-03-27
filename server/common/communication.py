@@ -55,7 +55,7 @@ class CommunicationHandler:
 
     def recv_msg(self):
         """
-        Reads a message from the current client socket
+        Reads and decodes a message from the current client socket
         """
         try:
             message_type = int.from_bytes(self._client_sock.recv(1), "big")
