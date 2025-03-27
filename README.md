@@ -183,6 +183,11 @@ La corrección personal tendrá en cuenta la calidad del código entregado y cas
 # Solución
 
 A continuación se indican los comandos para ejecutar cada uno de los ejercicios.
+Ciertos ejercicios requieren tener descomprimido el dataset de apuestas. El mismo se puede descomprimir con
+
+```bash
+cd .data && unzip dataset.zip
+```
 
 ### Ejercicio 1
 
