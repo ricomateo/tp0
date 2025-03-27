@@ -200,6 +200,26 @@ cat docker-compose-dev.yaml
 
 ### Ejercicio 2
 
+Para testear este ejercicio se agregó un nuevo target `docker-compose-up-without-build` para levantar los servicios sin buildear las imágenes.
+Para probarlo, generar un Docker compose con
+
+```bash
+./generar-compose.sh docker-compose-dev.yaml 1
+```
+
+Luego modificar algun valor de la config comop por ejemplo el log level tanto en el cliente como en el server y levantar los servicios con
+
+```bash
+make docker-compose-up-without-build
+```
+
+una vez levantados los servicios, revisar que el log level en los logs es correcto con 
+
+```
+make docker-compose-logs
+```
+
+
 ### Ejercicio 3
 
 Para este ejercicio, se puede levantar el server sin clientes, generando el Docker compose con el siguiente comando
