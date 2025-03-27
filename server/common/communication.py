@@ -30,7 +30,7 @@ class CommunicationHandler:
         Reads a message from the current client socket, and returns it
         """
         try:
-            message_type = int.from_bytes(self._client_sock.recv(1), "big")
+            message_type = int.from_bytes(self._recv_exact(1), "big")
             if message_type == BET_BATCH_MSG_TYPE:   
                 bets = self.__decode_bet_batch()
                 return message_type, bets
@@ -97,7 +97,7 @@ class CommunicationHandler:
         """
         Receives a message and decodes it into a list of bets.
         """
-        batch_size = int.from_bytes(self._client_sock.recv(4), "big")
+        batch_size = int.from_bytes(self._recv_exact(4), "big")
         bets = []
         for _ in range(batch_size):
             bet = self.__decode_bet_info()
@@ -147,6 +147,19 @@ class CommunicationHandler:
         Reads and return a string from the current socket connection.
         The string is decoded by first reading its length, and then the value.
         """
-        str_len = int.from_bytes(self._client_sock.recv(1), "big")
-        string = str(self._client_sock.recv(str_len), 'utf-8')
+        str_len = int.from_bytes(self._recv_exact(1), "big")
+        string = str(self._recv_exact(str_len), 'utf-8')
         return string
+
+    def _recv_exact(self, n):
+        """
+        Reads exactly n bytes from the socket, and returns the data.
+        If the connection is closed, raises an exception.
+        """
+        data = bytes()
+        while len(data) < n:
+            received_bytes = self._client_sock.recv(n - len(data))
+            if not received_bytes:
+                raise ConnectionError("Connection closed")
+            data += received_bytes
+        return data
