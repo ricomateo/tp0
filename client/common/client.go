@@ -69,6 +69,7 @@ func (c *Client) StartClientLoop() {
 		err := c.commHandler.SendBatch(batch)
 		if err != nil {
 			log.Errorf("action: batch_enviado | result: failure | error: %s", err)
+			return
 		} else {
 			log.Info("action: batch_enviado | result: success")
 		}

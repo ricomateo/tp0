@@ -6,6 +6,7 @@ from common.communication import *
 from common.error import MessageReceptionError
 from common.utils import *
 
+BARRIER_TIMEOUT = 2
 
 class Server:
     def __init__(self, port, listen_backlog, number_of_clients):
@@ -23,7 +24,7 @@ class Server:
         self.should_exit = Value('i', 0)
         self.number_of_clients = int(number_of_clients)
         self.sessions = []
-        self.barrier = Barrier(self.number_of_clients)
+        self.barrier = Barrier(self.number_of_clients, timeout=BARRIER_TIMEOUT)
 
     def run(self):
         """

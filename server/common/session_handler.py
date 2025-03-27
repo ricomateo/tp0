@@ -39,11 +39,7 @@ class SessionHandler:
 
                 elif message_type == GET_WINNERS_MSG_TYPE:
                     agency_id = payload
-                    # All the session handlers are synchronized here 
-                    self.barrier.wait()
-                    logging.info(f"action: sorteo | result: success")
-                    self._load_winners(agency_id)
-                    self.__communication_handler.send_winners(self.winners)
+                    self._handle_get_winners_message(agency_id)
                     break
                 else:
                     logging.info(f"invalid message_type = {message_type}")
@@ -51,6 +47,25 @@ class SessionHandler:
                 logging.error(f"failed to handle client connection. Error: {e}")
                 
         self.__communication_handler.close_current_connection()
+
+    def _handle_get_winners_message(self, agency_id):
+        """
+        Handles the get_winners message.
+        It waits on the barrier to synchronize with the other Session Handlers.
+        Once all the agencies have sent their bets, the Session handlers respond
+        with the winners to each of the agencies.
+        """
+        while True:
+            try:
+                # All the session handlers are synchronized here 
+                self.barrier.wait()
+                logging.info(f"action: sorteo | result: success")
+                self._load_winners(agency_id)
+                self.__communication_handler.send_winners(self.winners)
+            except TimeoutError:
+                # Use the timeout to check for the SIGTERM signal flag
+                if self._should_exit():
+                    return
 
     def _handle_batch_message(self, batch : list[Bet]):
         """
