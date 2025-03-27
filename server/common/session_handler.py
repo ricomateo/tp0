@@ -12,7 +12,6 @@ class SessionHandler:
         # A list of the winners 
         self.winners = []
         self.number_of_clients = number_of_clients
-        # This counter is a variable shared between the Session Handlers and the server.
         # File lock used to synchronize file access
         self.file_lock = file_lock
         # Shared flag used to know whether the session handler must exit

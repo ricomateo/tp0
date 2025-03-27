@@ -31,13 +31,11 @@ class Server:
         The Server listens for client connections and spawns a SessionHandler process to handle the session.
 
         Each of the sessions share some shared variables:
-            * agencies_counter: this variable counts the clients that have finalized sending their batches.
-            If agencies_counter == number_of_clients, then the winners can be sent to the clients.
+            * barrier: allows to synchronize the sessions to send the winners at the same time.
             * file_lock: a lock to synchronize the access to the file.
             * should_exit: a flag that is set to 1 when the server receives a SIGTERM signal. The session handlers constantly
             check this value to know if they should exit.
         """
-        # This counter holds the number of agencies that have finalized sending their bets
         file_lock = Lock()
         for _ in range(self.number_of_clients):
             if self._should_exit() is True:
