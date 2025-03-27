@@ -62,6 +62,7 @@ class SessionHandler:
                 logging.info(f"action: sorteo | result: success")
                 self._load_winners(agency_id)
                 self.__communication_handler.send_winners(self.winners)
+                return
             except TimeoutError:
                 # Use the timeout to check for the SIGTERM signal flag
                 if self._should_exit():
