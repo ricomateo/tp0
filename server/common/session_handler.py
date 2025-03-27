@@ -45,6 +45,7 @@ class SessionHandler:
                     logging.info(f"invalid message_type = {message_type}")
             except Exception as e:
                 logging.error(f"failed to handle client connection. Error: {e}")
+                return
                 
         self.__communication_handler.close_current_connection()
 
