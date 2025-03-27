@@ -228,6 +228,12 @@ Para este ejercicio, se puede levantar el server sin clientes, generando el Dock
 ./generar-compose.sh docker-compose-dev.yaml 0
 ```
 
+luego, levantar el server con
+
+```bash
+make docker-compose-up
+```
+
 y a continuación correr el script
 
 ```bash
