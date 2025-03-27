@@ -4,6 +4,9 @@ echo "Cantidad de clientes: $2"
 
 BASE_FILE=temp-compose.yaml
 
+# Restore any changes made to docker-compose-dev.yaml
+git restore docker-compose-dev.yaml
+
 # Use the existing docker-compose-dev.yaml file as a base
 cp docker-compose-dev.yaml $BASE_FILE
 
