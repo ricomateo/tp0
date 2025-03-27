@@ -7,7 +7,7 @@ BET_INFO_MSG_TYPE = 0
 
 class Server:
     def __init__(self, port, listen_backlog, number_of_clients):
-        self.number_of_clients = number_of_clients
+        self.number_of_clients = int(number_of_clients)
         self.__communication_handler = CommunicationHandler(port, listen_backlog)
         
 
