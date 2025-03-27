@@ -50,7 +50,7 @@ class CommunicationHandler:
         Reads a message from the current client socket
         """
         try:
-            message_type = int.from_bytes(self._client_sock.recv(1), "big")
+            message_type = int.from_bytes(self._recv_exact(1), "big")
             if message_type == BET_INFO_MSG_TYPE:
                 return self.__decode_bet_info()
 
@@ -100,8 +100,8 @@ class CommunicationHandler:
         Reads and return a string from the current socket connection.
         The string is decoded by first reading its length, and then the value.
         """
-        str_len = int.from_bytes(self._client_sock.recv(1), "big")
-        string = str(self._client_sock.recv(str_len), 'utf-8')
+        str_len = int.from_bytes(self._recv_exact(1), "big")
+        string = str(self._recv_exact(str_len), 'utf-8')
         return string
 
     def __sigterm_handler(self, signum, _):
@@ -117,3 +117,16 @@ class CommunicationHandler:
             logging.info("Closing socket connection")
             self._client_sock.close()
         sys.exit(0)
+
+    def _recv_exact(self, n):
+        """
+        Reads exactly n bytes from the socket, and returns the data.
+        If the connection is closed, raises an exception.
+        """
+        data = bytes()
+        while len(data) < n:
+            received_bytes = self._client_sock.recv(n - len(data))
+            if not received_bytes:
+                raise ConnectionError("Connection closed")
+            data += received_bytes
+        return data
