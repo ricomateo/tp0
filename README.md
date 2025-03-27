@@ -303,3 +303,66 @@ make docker-compose-down && make docker-compose-up && make docker-compose-logs
 ```
 
 
+## Protocolo de comunicación
+
+A continuación se detalla el protocolo de comunicación implementado para resolver la parte 2 del trabajo práctico.
+
+### Mensajes
+
+En general, todos los mensajes del protocolo tienen un orden definido para los distintos campos. Se utiliza un primer byte para determinar el tipo de mensaje, seguido de los campos del mensaje (cada campo viene precedido por 4 bytes que determinan su longitud).
+
+#### Envío de batch
+
+El mensaje de envío de batch del cliente esta formado por los siguientes campos
+1. Tipo: 1 byte (0)
+2. Tamaño del batch: 4 bytes
+3. Un listado de apuestas (la cantidad esta definida por el campo 2)
+
+Cada apuesta se serializa encadenando los distintos campos, cada uno precedido por su longitud. El valor de las longitudes es 1 byte.
+1. Longitud del ID de agencia: 1 byte
+2. ID de agencia
+3. Longitud del nombre: 1 byte
+4. Nombre
+5. Longitud del apellido: 1 byte
+6. Apellido 
+7. Longitud del documento: 1 byte
+8. Documento
+9. Longitud del nacimiento: 1 byte
+10. Fecha de nacimiento
+11. Longitud del número: 1 byte
+12. Número
+
+#### Confirmación de batch
+
+Cuando el servidor recibe un batch, le responde con este mensaje. Está formado por los siguientes campos
+1. Tipo: 1 byte (1)
+2. Estado del batch: 1 byte (0 = error, 1 = éxito)
+
+#### Finalización de envío de apuestas
+
+El cliente envía este mensaje para informarle el servidor que ha terminado de enviarle las apuestas. Tiene los siguientes campos
+1. Tipo: 1 byte (2)
+2. Longitud del ID de agencia: 1 byte
+3. ID de la agencia
+
+#### Consulta de ganadores
+
+El cliente envía este mensaje al servidor para consultarle los ganadores de su agencia. Tiene los siguientes campos
+1. Tipo: 1 byte (3)
+2. Longitud del ID de agencia: 1 byte
+3. ID de la agencia
+
+#### Sorteo no realizado (no winners yet)
+El servidor envía este mensaje al cliente para informarle que el sorteo aún no se ha realizado. Tiene los siguientes campos
+1. Tipo: 1 byte (4)
+
+#### Listado de ganadores
+El servidor envía este mensaje al cliente para informarle los ganadores de su agencia. Tiene los siguientes campos
+1. Tipo: 1 byte (5)
+2. Cantidad de ganadores: 1 byte
+3. Listado de ganadores
+
+Los ganadores se serializan de la siguiente forma
+1. Longitud del documento: 1 byte
+2. Documento
+
