@@ -215,3 +215,49 @@ y a continuación correr el script
 ```
 
 ### Ejercicio 4
+
+Para este probar el graceful shutdown de los servicios, se puede levantar el server junto a un cliente, generando el Docker compose con:
+
+```bash
+./generar-compose.sh docker-compose-dev.yaml 0
+```
+
+Luego, se levantan los servicios con
+
+```bash
+make docker-compose-up
+```
+
+Con ambos servicios corriendo, se puede apagar el server con
+
+```bash
+docker stop server -t 5
+```
+
+Y revisar los logs del server con
+
+```
+make docker-compose-logs | grep server
+```
+
+Para corroborar que se haya cerrado sin errores.
+
+Luego, se pueden reiniciar ambos servicios con
+
+```bash
+make docker-compose-down && make docker-compose-up
+```
+
+Y ahora apagar el cliente con
+
+```bash
+docker stop client1 -t 5
+```
+
+Y esta vez revisar los logs del cliente con
+
+```
+make docker-compose-logs | grep client1
+```
+
+### Ejercicio 5
