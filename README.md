@@ -260,4 +260,20 @@ Y esta vez revisar los logs del cliente con
 make docker-compose-logs | grep client1
 ```
 
-### Ejercicio 5
+### Ejercicio 5, 6, 7 y 8
+
+Los ejercicios del 5 al 8 se pueden ejecutar todos de la misma forma.
+
+Primero, generar un Docker compose con 5 clientes
+
+```bash
+./generar-compose.sh docker-compose-dev.yaml 5
+```
+
+Luego, levantar los servicios y revisar los logs con
+
+```bash
+make docker-compose-down && make docker-compose-up && make docker-compose-logs
+```
+
+
