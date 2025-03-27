@@ -245,7 +245,7 @@ y a continuación correr el script
 Para este probar el graceful shutdown de los servicios, se puede levantar el server junto a un cliente, generando el Docker compose con:
 
 ```bash
-./generar-compose.sh docker-compose-dev.yaml 0
+./generar-compose.sh docker-compose-dev.yaml 1
 ```
 
 Luego, se levantan los servicios con
