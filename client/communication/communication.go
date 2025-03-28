@@ -35,7 +35,7 @@ func (c *CommunicationHandler) Connect(address string) error {
 // In case of failure returns an error
 func (c *CommunicationHandler) Send(msg Message) error {
 	serializedMsg := msg.serialize()
-	_, err := c.conn.Write(serializedMsg)
+	err := c.writeAll(serializedMsg)
 	if err != nil {
 		return err
 	}
@@ -90,4 +90,19 @@ func (c *CommunicationHandler) recvConfirmedBetMsg() (*Message, error) {
 	}
 	msg := ConfirmedBetMessage(payload)
 	return &msg, nil
+}
+
+// writeAll writes all the given data to the current connection.
+// In case of failure, it returns an error
+func (c *CommunicationHandler) writeAll(data []byte) error {
+	written := 0
+	for written < len(data) {
+		n, err := c.conn.Write(data[written:])
+
+		if err != nil {
+			return err
+		}
+		written += n
+	}
+	return nil
 }
