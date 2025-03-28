@@ -35,7 +35,7 @@ func (c *CommunicationHandler) Connect(address string) error {
 // In case of failure returns an error
 func (c *CommunicationHandler) SendBatch(bets []BetInfo) error {
 	serializedMsg := serializeBets(bets)
-	_, err := c.conn.Write(serializedMsg)
+	err := c.writeAll(serializedMsg)
 	if err != nil {
 		return err
 	}
@@ -73,4 +73,19 @@ func (c *CommunicationHandler) recv(size uint32) []byte {
 // recvByte returns a single byte read from the socket
 func (c *CommunicationHandler) recvByte() uint8 {
 	return uint8(c.recv(1)[0])
+}
+
+// writeAll writes all the given data to the current connection.
+// In case of failure, it returns an error
+func (c *CommunicationHandler) writeAll(data []byte) error {
+	written := 0
+	for written < len(data) {
+		n, err := c.conn.Write(data[written:])
+
+		if err != nil {
+			return err
+		}
+		written += n
+	}
+	return nil
 }
