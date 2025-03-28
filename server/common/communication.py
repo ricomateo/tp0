@@ -5,8 +5,6 @@ import sys
 from common.utils import Bet
 from common.error import MessageReceptionError
 
-SOCKET_TIMEOUT = 5
-
 BET_BATCH_MSG_TYPE = 0
 BATCH_CONFIRMATION_MSG_TYPE = 1
 FINALIZATION_MSG_TYPE = 2

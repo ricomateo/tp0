@@ -16,8 +16,6 @@ class Server:
         self._server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._server_socket.bind(('', port))
         self._server_socket.listen(listen_backlog)
-        # Set socket timeout to check for the signal flag
-        self._server_socket.settimeout(SOCKET_TIMEOUT)
 
         # Shared flag that is set to 1 when the server receives a SIGTERM signal.
         self.should_exit = Value('i', 0)
@@ -50,38 +48,32 @@ class Server:
 
     def accept_new_connection(self):
         """
-        Blocks for SOCKET_TIMEOUT waiting for connections. The timeout is required to check for the
-        'should_exit' flag.
+        Accepts a new connection and returns the socket.
         """
 
-        while True:
-            if self._should_exit():
-                self._graceful_shutdown()
-            try:
-                # Connection arrived
-                logging.info('action: accept_connections | result: in_progress')
-                c, addr = self._server_socket.accept()
-                logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
-                return c
-            except socket.timeout:
-                # This timeout allows to check for the SIGTERM signal more regularly
-                continue
+        # Connection arrived
+        logging.info('action: accept_connections | result: in_progress')
+        c, addr = self._server_socket.accept()
+        logging.info(f'action: accept_connections | result: success | ip: {addr[0]}')
+        return c
     
     def __sigterm_handler(self, signum, _):
         """
-        SIGTERM handler. Sets the shared flag 'should_exit' to 1.
+        SIGTERM handler. Sets the shared flag 'should_exit' to 1,
+        and closes the server socket.
         """
         if signum == signal.SIGTERM:
             self.should_exit.value = 1
+            logging.info("Closing server socket")
+            self._server_socket.close()
 
     def _graceful_shutdown(self):
         """
-        Shuts down the server gracefully, closing the socket, and joining all the sessions.
+        Shuts down the server gracefully, and joining all the sessions.
         Each session closes its own socket.
         """
+        # The server socket is already closed by the moment this function is called
         logging.info("Shutting down")
-        logging.info("Closing server socket")
-        self._server_socket.close()
         logging.info("Joining sessions")
         for session in self.sessions:
             session.join()
