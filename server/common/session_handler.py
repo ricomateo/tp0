@@ -4,7 +4,7 @@ from common.utils import *
 
 
 class SessionHandler:
-    def __init__(self, client_socket, number_of_clients, file_lock, should_exit, barrier):
+    def __init__(self, client_socket, number_of_clients, file_lock, should_exit_lock, should_exit, barrier):
         # Communication handler, in charge of sending and receiving messages
         self.__communication_handler = CommunicationHandler(client_socket)
         # A list of the winners 
@@ -12,6 +12,8 @@ class SessionHandler:
         self.number_of_clients = number_of_clients
         # File lock used to synchronize file access
         self.file_lock = file_lock
+        # Lock to protect the 'should_exit' flag
+        self.should_exit_lock = should_exit_lock
         # Shared flag used to know whether the session handler must exit
         self.should_exit = should_exit
         # Barrier to wait for all the clients to send their bets
@@ -83,4 +85,5 @@ class SessionHandler:
                 self.winners.append(bet.document)
 
     def _should_exit(self) -> bool:
-        return self.should_exit.value == 1
+        with self.should_exit_lock:
+            return self.should_exit.value == 1

@@ -19,7 +19,11 @@ class Server:
 
         # Shared flag that is set to 1 when the server receives a SIGTERM signal.
         self.should_exit = Value('i', 0)
+        # Lock to protect the flag
+        self.should_exit_lock = Lock()
+
         self.number_of_clients = int(number_of_clients)
+        # List that contains the subprocesses handlers
         self.sessions = []
         self.barrier = Barrier(self.number_of_clients)
 
@@ -38,7 +42,7 @@ class Server:
             if self._should_exit() is True:
                 break
             client_socket = self.accept_new_connection()
-            session_handler = SessionHandler(client_socket, self.number_of_clients, file_lock, self.should_exit, self.barrier)
+            session_handler = SessionHandler(client_socket, self.number_of_clients, file_lock, self.should_exit_lock, self.should_exit, self.barrier)
             session = Process(target=session_handler.start)
             self.sessions.append(session)
             session.start()
@@ -63,7 +67,8 @@ class Server:
         and closes the server socket.
         """
         if signum == signal.SIGTERM:
-            self.should_exit.value = 1
+            with self.should_exit_lock:
+                self.should_exit.value = 1
             logging.info("Closing server socket")
             self._server_socket.close()
 
@@ -81,5 +86,7 @@ class Server:
 
 
     def _should_exit(self):
+        # Locking is not necessary here, as the Server is the
+        # only process that modifies this value
         return self.should_exit.value == 1
     
